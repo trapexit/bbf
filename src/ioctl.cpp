@@ -116,6 +116,10 @@ namespace IOCtl
   int
   block_flush(const int fd)
   {
-    return ::ioctl(fd,BLKFLSBUF,NULL);
+    int rv;
+
+    rv = ::ioctl(fd,BLKFLSBUF,NULL);
+
+    return ((rv == -1) ? -errno : rv);
   }
 }
