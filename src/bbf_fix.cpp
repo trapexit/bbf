@@ -50,7 +50,7 @@ fix_loop_core(BlkDev             &blkdev,
     rv = blkdev.read(badblock,buf,logical_block_size);
 
   if(rv < 0)
-    std::cout << "failed [" << Error::to_string(rv) << "]: using zeros";
+    std::cout << "failed [" << Error::to_string(-rv) << "]: using zeros";
   else
     std::cout << "succeeded";
   std::cout << " (" << attempts << " attempts)" << std::endl;
@@ -65,7 +65,7 @@ fix_loop_core(BlkDev             &blkdev,
     rv = blkdev.write(badblock,buf,logical_block_size);
 
   if(rv < 0)
-    std::cout << "failed [" << Error::to_string(rv) << "]";
+    std::cout << "failed [" << Error::to_string(-rv) << "]";
   else
     std::cout << "succeeded";
   std::cout << " (" << attempts << " attempts)" << std::endl;
