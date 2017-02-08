@@ -36,22 +36,12 @@ namespace signals
     _sigs[sig]++;
   }
 
-  void
-  reset(const int sig)
-  {
-    _sigs[sig] = 0;
-  }
-
   int
-  get_reset(const int sig)
+  dec(const int sig)
   {
-    int rv;
-
-    rv = signals::get(sig);
-
-    signals::reset(sig);
-
-    return rv;
+    if(_sigs[sig] == 0)
+      return 0;
+    return _sigs[sig]--;
   }
 
   int
