@@ -124,7 +124,7 @@ burnin_loop(BlkDev                &blkdev,
       if(signals::signaled_to_exit())
         break;
 
-      if(signals::get_reset(SIGALRM))
+      if(signals::dec(SIGALRM))
         {
           signals::alarm(1);
           current_time = Time::get_monotonic();

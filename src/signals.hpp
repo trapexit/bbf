@@ -24,8 +24,7 @@ namespace signals
 
   int  get(const int sig);
   void incr(const int sig);
-  void reset(const int sig);
-  int  get_reset(const int sig);
+  int  dec(const int sig);
 
   int  signaled_to_exit(void);
 
