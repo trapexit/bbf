@@ -44,7 +44,7 @@ namespace Info
     const double blocks_per_second = ((double)processed_blocks / time_passed);
     const size_t time_left         = ((double)blocks_left / blocks_per_second);
 
-    os << "\rCurrent: " << current_block << " ("
+    os << "\r\x1B[2KCurrent: " << current_block << " ("
        << std::fixed
        << std::setprecision(2)
        << percentage

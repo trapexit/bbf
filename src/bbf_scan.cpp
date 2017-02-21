@@ -118,7 +118,7 @@ scan(BlkDev                &blkdev,
 
   signals::alarm(1);
 
-  std::cout << "\rScanning: " << start_block << " - " << end_block << std::endl;
+  std::cout << "\r\x1B[2KScanning: " << start_block << " - " << end_block << std::endl;
   scan_loop(blkdev,start_block,end_block,stepping,badblocks);
   std::cout << std::endl;
 
