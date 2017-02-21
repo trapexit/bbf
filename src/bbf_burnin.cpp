@@ -172,7 +172,7 @@ burnin(BlkDev                &blkdev,
 
   signals::alarm(1);
 
-  std::cout << "\rBurning: " << start_block << " - " << end_block << std::endl;
+  std::cout << "\r\x1B[2KBurning: " << start_block << " - " << end_block << std::endl;
   burnin_loop(blkdev,start_block,end_block,stepping,buffer_size,badblocks,retries);
   std::cout << std::endl;
 
