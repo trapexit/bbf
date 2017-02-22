@@ -59,7 +59,9 @@ usage(std::ostream &os)
     "  -s, --start-block <lba> : block to start from (default: 0)\n"
     "  -e, --end-block <lba>   : block to stop at (default: last block)\n"
     "  -o, --output <file>     : file to write bad block list to\n"
+    "                            defaults to ${HOME}/badblocks.<captcha>\n"
     "  -i, --input <file>      : file to read bad block list from\n"
+    "                            defaults to ${HOME}/badblocks.<captcha>\n"
     "  -r, --retries <count>   : number of retries on certain reads & writes\n"
     "  -c, --captcha <captcha> : needed when performing destructive operations\n"
     "\n";
@@ -207,16 +209,12 @@ Options::validate(void) const
       if(captcha.empty())
         return AppError::argument_required("captcha");
     case Options::SCAN:
-      if(output_file.empty())
-        return AppError::argument_required("bad block output file");
       break;
     case Options::FIX:
     case Options::WRITE_UNCORRECTABLE:
       if(captcha.empty())
         return AppError::argument_required("captcha");
     case Options::FIND_FILES:
-      if(input_file.empty())
-        return AppError::argument_required("bad block input file");
       break;
     case Options::DUMP_FILES:
     case Options::INFO:

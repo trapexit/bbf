@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __SG_HPP__
+#define __SG_HPP__
+
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <string.h>
@@ -206,3 +209,5 @@ namespace sg
                              const uint64_t lba,
                              const int      timeout);
 }
+
+#endif

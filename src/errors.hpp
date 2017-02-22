@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __ERRORS_HPP__
+#define __ERRORS_HPP__
+
 #include <string>
 
 namespace Error
@@ -79,3 +82,5 @@ public:
   int         error;
   std::string extra;
 };
+
+#endif

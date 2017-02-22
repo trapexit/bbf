@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __IOCTL_HPP__
+#define __IOCTL_HPP__
+
 #include <stdint.h>
 #include <linux/fiemap.h>
 
@@ -33,3 +36,5 @@ namespace IOCtl
 
   int block_flush(const int fd);
 }
+
+#endif

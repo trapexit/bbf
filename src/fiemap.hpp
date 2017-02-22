@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __FIEMAP_HPP__
+#define __FIEMAP_HPP__
+
 #include <linux/fiemap.h>
 
 namespace FIEMap
@@ -23,3 +26,5 @@ namespace FIEMap
   int            extent_map_count(const int fd);
   struct fiemap *extent_map(const int fd);
 }
+
+#endif

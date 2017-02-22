@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __FILE_HPP__
+#define __FILE_HPP__
+
 #include <stdint.h>
 
 #include <string>
@@ -25,7 +28,7 @@ namespace File
 {
   typedef struct { uint64_t block; uint64_t length; } Block;
   typedef std::vector<Block> BlockVector;
-  
+
   int64_t
   logical_block_size(const std::string &filepath);
 
@@ -33,3 +36,5 @@ namespace File
   blocks(const std::string &filepath,
          BlockVector       &blockvector);
 }
+
+#endif

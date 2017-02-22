@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __OPTIONS_HPP__
+#define __OPTIONS_HPP__
+
 #include <stdint.h>
 
 #include <string>
@@ -80,3 +83,5 @@ public:
   std::string input_file;
   std::string captcha;
 };
+
+#endif

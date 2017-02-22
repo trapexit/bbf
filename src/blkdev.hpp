@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __BLKDEV_HPP__
+#define __BLKDEV_HPP__
+
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -116,3 +119,5 @@ private:
   int _fd;
   int _timeout;
 };
+
+#endif

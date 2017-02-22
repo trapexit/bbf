@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __BLKSCANNER_HPP__
+#define __BLKSCANNER_HPP__
+
 class BlkScanner
 {
   BlkScanner(BlkDev   &blkdev,
@@ -27,3 +30,5 @@ private:
   uint64_t  _start_block;
   uint64_t  _end_block;
 };
+
+#endif

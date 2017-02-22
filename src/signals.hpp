@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __SIGNALS_HPP__
+#define __SIGNALS_HPP__
+
 #include <signal.h>
 
 namespace signals
@@ -33,3 +36,5 @@ namespace signals
 
   unsigned int alarm(const unsigned int secs);
 }
+
+#endif

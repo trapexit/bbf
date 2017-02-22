@@ -17,13 +17,32 @@
 */
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include "badblockfile.hpp"
+#include "captcha.hpp"
+#include "blkdev.hpp"
+
+std::string
+BadBlockFile::filepath(const BlkDev &blkdev)
+{
+  const char *homedir;
+  std::stringstream ss;
+
+  homedir = ::getenv("HOME");
+  if((homedir == NULL) || (homedir[0] == '\0'))
+    homedir = "/root";
+
+  ss << homedir << "/badblocks." << captcha::calculate(blkdev);
+
+  return ss.str();
+}
 
 static
 void

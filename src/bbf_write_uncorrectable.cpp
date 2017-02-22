@@ -55,19 +55,26 @@ namespace bbf
   {
     int rv;
     BlkDev blkdev;
+    std::string captcha;
+    std::string input_file;
     std::vector<uint64_t> badblocks;
 
-    rv = BadBlockFile::read(opts.input_file,badblocks);
-    if(rv < 0)
-      return AppError::reading_badblocks_file(-rv,opts.input_file);
+    input_file = opts.input_file;
 
     rv = blkdev.open_rdwr(opts.device);
     if(rv < 0)
       return AppError::opening_device(-rv,opts.device);
 
-    const std::string captcha = captcha::calculate(blkdev);
+    captcha = captcha::calculate(blkdev);
     if(opts.captcha != captcha)
       return AppError::captcha(opts.captcha,captcha);
+
+    if(input_file.empty())
+      input_file = BadBlockFile::filepath(blkdev);
+
+    rv = BadBlockFile::read(opts.input_file,badblocks);
+    if(rv < 0)
+      return AppError::reading_badblocks_file(-rv,opts.input_file);
 
     write_uncorrectable_loop(blkdev,badblocks);
 

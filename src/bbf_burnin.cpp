@@ -199,38 +199,46 @@ static
 AppError
 burnin(const Options &opts)
 {
-  int      rv;
-  int      retries;
-  uint64_t start_block;
-  uint64_t end_block;
-  uint64_t num_of_blocks;
-  BlkDev   blkdev;
+  int rv;
+  BlkDev blkdev;
+  std::string captcha;
+  std::string input_file;
+  std::string output_file;
   std::vector<uint64_t> badblocks;
 
-  if(!opts.input_file.empty())
-    {
-      rv = BadBlockFile::read(opts.input_file,badblocks);
-      if(rv < 0)
-        return AppError::reading_badblocks_file(-rv,opts.input_file);
-    }
+  input_file  = opts.input_file;
+  output_file = opts.output_file;
 
   rv = blkdev.open_rdwr(opts.device);
   if(rv < 0)
     return AppError::opening_device(-rv,opts.device);
 
-  const std::string captcha = captcha::calculate(blkdev);
+  captcha = captcha::calculate(blkdev);
   if(opts.captcha != captcha)
     return AppError::captcha(opts.captcha,captcha);
+
+  if(output_file.empty())
+    output_file = BadBlockFile::filepath(blkdev);
+
+  if(input_file.empty())
+    input_file = output_file;
+
+  rv = BadBlockFile::read(input_file,badblocks);
+  if(rv < 0)
+    std::cout << "Warning: unable to open " << input_file << std::endl;
 
   set_blkdev_rwtype(blkdev,opts.rwtype);
 
   burnin(blkdev,opts,badblocks);
 
-  rv = blkdev.close();
-
-  rv = BadBlockFile::write(opts.output_file,badblocks);
+  rv = BadBlockFile::write(output_file,badblocks);
   if(rv < 0)
-    return AppError::writing_badblocks_file(-rv,opts.output_file);
+    return AppError::writing_badblocks_file(-rv,output_file);
+  std::cout << "Bad blocks written to " << output_file << std::endl;
+
+  rv = blkdev.close();
+  if(rv < 0)
+    return AppError::closing_device(-rv,opts.device);
 
   return AppError::success();
 }
