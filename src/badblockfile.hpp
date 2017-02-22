@@ -16,16 +16,26 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __BADBLOCKFILE_HPP__
+#define __BADBLOCKFILE_HPP__
+
 #include <stdint.h>
 
 #include <iostream>
+#include <string>
 #include <vector>
+
+#include "blkdev.hpp"
 
 namespace BadBlockFile
 {
+  std::string filepath(const BlkDev &blkdev);
+
   int read(const std::string     &filepath,
            std::vector<uint64_t> &blocks);
 
   int write(const std::string           &filepath,
             const std::vector<uint64_t> &blocks);
 };
+
+#endif

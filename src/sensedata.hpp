@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __SENSEDATA_HPP__
+#define __SENSEDATA_HPP__
+
 #include <stdint.h>
 
 namespace SenseData
@@ -32,3 +35,5 @@ namespace SenseData
 
   const char * error_to_string(const int error);
 }
+
+#endif

@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __INFO_HPP__
+#define __INFO_HPP__
+
 #include <iostream>
 #include <vector>
 
@@ -32,3 +35,5 @@ namespace Info
         const size_t                 current_block,
         const std::vector<uint64_t> &badblocks);
 }
+
+#endif

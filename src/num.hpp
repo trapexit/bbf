@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __NUM_HPP__
+#define __NUM_HPP__
+
 #include <string>
 
 #include <stdint.h>
@@ -26,3 +29,5 @@ namespace num
   humanize(const uint64_t bytes,
            const bool     si = false);
 }
+
+#endif

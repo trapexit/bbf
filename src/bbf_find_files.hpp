@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __BBF_FIND_FILES_HPP__
+#define __BBF_FIND_FILES_HPP__
+
 class AppError;
 class Options;
 
@@ -24,3 +27,5 @@ namespace bbf
   AppError
   find_files(const Options &opts);
 }
+
+#endif

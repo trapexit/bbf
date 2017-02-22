@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __BBF_WRITE_UNCORRECTABLE_HPP__
+#define __BBF_WRITE_UNCORRECTABLE_HPP__
+
 class AppError;
 class Options;
 
@@ -24,3 +27,5 @@ namespace bbf
   AppError
   write_uncorrectable(const Options &opts);
 }
+
+#endif

@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __MATH_HPP__
+#define __MATH_HPP__
+
 #include <stdint.h>
 
 namespace math
@@ -28,3 +31,5 @@ namespace math
   round_down(const uint64_t base,
              const uint64_t mul);
 }
+
+#endif

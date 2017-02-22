@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __CAPTCHA_HPP__
+#define __CAPTCHA_HPP__
+
 #include <string>
 
 class BlkDev;
@@ -25,3 +28,5 @@ namespace captcha
   std::string
   calculate(const BlkDev &blkdev);
 }
+
+#endif

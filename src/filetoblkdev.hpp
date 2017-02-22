@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#ifndef __FILETOBLKDEV_HPP__
+#define __FILETOBLKDEV_HPP__
+
 #include <string>
 
 namespace FileToBlkDev
@@ -23,3 +26,5 @@ namespace FileToBlkDev
   std::string
   find(const std::string &filepath);
 }
+
+#endif
