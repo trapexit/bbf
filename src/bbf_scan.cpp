@@ -167,6 +167,8 @@ scan(const Options &opts)
   rv = BadBlockFile::read(input_file,badblocks);
   if(rv < 0)
     std::cout << "Warning: unable to open " << input_file << std::endl;
+  else
+    std::cout << "Imported bad blocks from " << input_file << std::endl;
 
   set_blkdev_rwtype(blkdev,opts.rwtype);
 
