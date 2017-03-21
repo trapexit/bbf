@@ -209,7 +209,7 @@ burnin(const Options &opts)
   input_file  = opts.input_file;
   output_file = opts.output_file;
 
-  rv = blkdev.open_rdwr(opts.device);
+  rv = blkdev.open_rdwr(opts.device,!opts.force);
   if(rv < 0)
     return AppError::opening_device(-rv,opts.device);
 

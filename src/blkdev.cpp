@@ -81,9 +81,12 @@ BlkDev::open_read(const std::string &path)
 }
 
 int
-BlkDev::open_rdwr(const std::string &path)
+BlkDev::open_rdwr(const std::string &path,
+                  const bool         excl)
 {
-  const int flags = O_RDWR|O_NONBLOCK|O_EXCL;
+  int flags = O_RDWR|O_NONBLOCK;
+
+  flags |= (excl ? O_EXCL : 0);
 
   return open(path,flags);
 }

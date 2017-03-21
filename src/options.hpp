@@ -57,7 +57,8 @@ public:
     input_file(),
     instruction(_INVALID),
     device(),
-    rwtype(OS)
+    rwtype(OS),
+    force(false)
   {}
 
 public:
@@ -82,6 +83,7 @@ public:
   std::string output_file;
   std::string input_file;
   std::string captcha;
+  bool        force;
 };
 
 #endif
