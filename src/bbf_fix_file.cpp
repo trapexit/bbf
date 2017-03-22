@@ -20,21 +20,22 @@
 #include <stdint.h>
 
 #include <iostream>
-#include <vector>
+#include <utility>
 
-#include "badblockfile.hpp"
 #include "blkdev.hpp"
 #include "captcha.hpp"
 #include "errors.hpp"
+#include "file.hpp"
+#include "filetoblkdev.hpp"
 #include "options.hpp"
 #include "signals.hpp"
 
 static
 int
-fix_loop_core(BlkDev             &blkdev,
-              const uint64_t      logical_block_size,
-              const unsigned int  retries,
-              const uint64_t      badblock)
+fix_file_loop_core(BlkDev             &blkdev,
+                   const uint64_t      logical_block_size,
+                   const unsigned int  retries,
+                   const uint64_t      badblock)
 {
   int rv;
   uint64_t attempts;
@@ -43,50 +44,53 @@ fix_loop_core(BlkDev             &blkdev,
   if(signals::signaled_to_exit())
     return -EINTR;
 
-  std::cout << "Reading block " << badblock << ' ' << std::flush;
-
   rv = -1;
   for(attempts = 0; ((attempts <= retries) && (rv < 0)); attempts++)
     rv = blkdev.read(badblock,buf,logical_block_size);
 
   if(rv < 0)
-    std::cout << "failed [" << Error::to_string(-rv) << "]: using zeros";
-  else
-    std::cout << "succeeded";
-  std::cout << " (" << attempts << " attempts)" << std::endl;
-
-  if(rv < 0)
-    memset(buf,0,logical_block_size);
-
-  std::cout << "Writing block " << badblock << ' ' << std::flush;
+    {
+      std::cout << "Reading block failed ("
+                << attempts << " attempts) "
+                << "[" << Error::to_string(-rv) << "]: using zeros"
+                << std::endl;
+      memset(buf,0,logical_block_size);
+    }
 
   rv = -1;
   for(attempts = 0; ((attempts <= retries) && (rv < 0)); attempts++)
     rv = blkdev.write(badblock,buf,logical_block_size);
 
   if(rv < 0)
-    std::cout << "failed [" << Error::to_string(-rv) << "]";
-  else
-    std::cout << "succeeded";
-  std::cout << " (" << attempts << " attempts)" << std::endl;
+    std::cout << "Writing block failed ("
+              << attempts << " attempts) "
+              << "[" << Error::to_string(-rv) << "]"
+              << std::endl;
 
-  return rv;
+  return 0;
 }
+
 
 static
 int
-fix_loop(BlkDev                      &blkdev,
-         const std::vector<uint64_t> &badblocks,
-         const unsigned int           retries)
+fix_file_loop(BlkDev                  &blkdev,
+              const File::BlockVector &blockvector,
+              const unsigned int       retries)
 {
   int rv;
   const uint64_t logical_block_size = blkdev.logical_block_size();
 
-  for(uint64_t i = 0, ei = badblocks.size(); i != ei; ++i)
+  for(size_t i = 0, ei = blockvector.size(); i != ei; i++)
     {
-      rv = fix_loop_core(blkdev,logical_block_size,retries,badblocks[i]);
-      if(rv)
-        break;
+      uint64_t        j = blockvector[i].block;
+      const uint64_t ej = blockvector[i].length + j;
+
+      for(; j != ej; j++)
+        {
+          rv = fix_file_loop_core(blkdev,logical_block_size,retries,j);
+          if(rv)
+            break;
+        }
     }
 
   return rv;
@@ -110,19 +114,24 @@ set_blkdev_rwtype(BlkDev                &blkdev,
 
 static
 AppError
-fix(const Options &opts)
+fix_file(const Options &opts)
 {
   int rv;
   BlkDev blkdev;
-  std::vector<uint64_t> badblocks;
+  std::string devpath;
+  File::BlockVector blockvector;
 
-  rv = BadBlockFile::read(opts.input_file,badblocks);
+  rv = File::blocks(opts.device,blockvector);
   if(rv < 0)
-    return AppError::reading_badblocks_file(-rv,opts.input_file);
+    return AppError::opening_file(-rv,opts.device);
 
-  rv = blkdev.open_rdwr(opts.device,!opts.force);
+  devpath = FileToBlkDev::find(opts.device);
+  if(devpath.empty())
+    return AppError::opening_device(ENOENT,opts.device);
+
+  rv = blkdev.open_rdwr(devpath,!opts.force);
   if(rv < 0)
-    return AppError::opening_device(-rv,opts.device);
+    return AppError::opening_device(-rv,devpath);
 
   const std::string captcha = captcha::calculate(blkdev);
   if(opts.captcha != captcha)
@@ -130,7 +139,7 @@ fix(const Options &opts)
 
   set_blkdev_rwtype(blkdev,opts.rwtype);
 
-  rv = fix_loop(blkdev,badblocks,opts.retries);
+  rv = fix_file_loop(blkdev,blockvector,opts.retries);
 
   rv = blkdev.close();
   if(rv < 0)
@@ -142,8 +151,8 @@ fix(const Options &opts)
 namespace bbf
 {
   AppError
-  fix(const Options &opts)
+  fix_file(const Options &opts)
   {
-    return ::fix(opts);
+    return ::fix_file(opts);
   }
 }

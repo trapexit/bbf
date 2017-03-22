@@ -44,6 +44,8 @@ usage(std::ostream &os)
     "    fix                   : attempt to force drive to reallocate block\n"
     "                            * on successful read of block, write it back\n"
     "                            * on unsuccessful read of block, write zeros\n"
+    "    fix-file              : same behavior as 'fix' but specifically to a file's\n"
+    "                            blocks\n"
     "    burnin                : attempts a non-destructive write, read, & verify\n"
     "                            * read block, write block of 0x00, 0x55, 0xAA, 0xFF\n"
     "                            * write back original block if was successfully read\n"
@@ -138,6 +140,8 @@ Options::instr_from_string(const std::string str)
     return Options::SCAN;
   if(str == "fix")
     return Options::FIX;
+  if(str == "fix-file")
+    return Options::FIX_FILE;
   if(str == "burnin")
     return Options::BURNIN;
   if(str == "find-files")
@@ -217,6 +221,7 @@ Options::validate(void) const
     case Options::SCAN:
       break;
     case Options::FIX:
+    case Options::FIX_FILE:
     case Options::WRITE_UNCORRECTABLE:
       if(captcha.empty())
         return AppError::argument_required("captcha");

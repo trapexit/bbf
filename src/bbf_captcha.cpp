@@ -16,12 +16,29 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <errno.h>
+
 #include <iostream>
 
 #include "blkdev.hpp"
 #include "captcha.hpp"
 #include "errors.hpp"
+#include "filetoblkdev.hpp"
 #include "options.hpp"
+
+static
+int
+open_file_dev(BlkDev            &blkdev,
+              const std::string &filepath)
+{
+  std::string devpath;
+
+  devpath = FileToBlkDev::find(filepath);
+  if(devpath.empty())
+    return -ENOENT;
+
+  return blkdev.open_read(devpath);
+}
 
 namespace bbf
 {
@@ -32,6 +49,9 @@ namespace bbf
     BlkDev blkdev;
 
     rv = blkdev.open_read(opts.device);
+    if(rv == -ENOTBLK)
+      rv = open_file_dev(blkdev,opts.device);
+
     if(rv < 0)
       return AppError::opening_device(-rv,opts.device);
 
