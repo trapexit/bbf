@@ -35,6 +35,7 @@ public:
       FILE_BLOCKS,
       FIND_FILES,
       FIX,
+      FIX_FILE,
       INFO,
       SCAN,
       WRITE_UNCORRECTABLE,

@@ -24,6 +24,7 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 
 ### arguments ###
 
+* **-f, --force** : override checking if drive is in use when trying to perform destructive actions
 * **-t, --rwtype <os|ata>** : select between OS or ATA reads and writes (default: os)
 * **-q, --quiet** : redirects stdout to /dev/null
 * **-s, --start-block <lba>** : block to start from (default: 0)
@@ -39,6 +40,7 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 * **captcha** : print captcha for device
 * **scan** : perform scan for bad blocks by reading
 * **fix** : attempt to force drive to reallocate block
+* **fix-file** : same behavior as 'fix' but only for a file's blocks
 * **burnin** : attempts a non-destructive write, read, & verify
 * **find-files** : given a list of bad blocks try to find affected files
 * **dump-files** : dump list of block ranges and files assocated with them

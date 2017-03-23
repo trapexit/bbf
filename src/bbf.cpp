@@ -25,6 +25,7 @@
 #include "bbf_file_blocks.hpp"
 #include "bbf_find_files.hpp"
 #include "bbf_fix.hpp"
+#include "bbf_fix_file.hpp"
 #include "bbf_info.hpp"
 #include "bbf_scan.hpp"
 #include "bbf_write_uncorrectable.hpp"
@@ -48,6 +49,8 @@ process_instruction(const Options &opts)
       return bbf::scan(opts);
     case Options::FIX:
       return bbf::fix(opts);
+    case Options::FIX_FILE:
+      return bbf::fix_file(opts);
     case Options::FIND_FILES:
       return bbf::find_files(opts);
     case Options::FILE_BLOCKS:
