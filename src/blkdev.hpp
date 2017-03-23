@@ -39,7 +39,8 @@ public:
   int open(const std::string &path,
            const int          flags);
   int open_read(const std::string &path);
-  int open_rdwr(const std::string &path);
+  int open_rdwr(const std::string &path,
+                const bool         excl = true);
   int close(void);
 
 public:

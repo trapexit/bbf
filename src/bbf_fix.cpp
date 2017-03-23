@@ -120,7 +120,7 @@ fix(const Options &opts)
   if(rv < 0)
     return AppError::reading_badblocks_file(-rv,opts.input_file);
 
-  rv = blkdev.open_rdwr(opts.device);
+  rv = blkdev.open_rdwr(opts.device,!opts.force);
   if(rv < 0)
     return AppError::opening_device(-rv,opts.device);
 

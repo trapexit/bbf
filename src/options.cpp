@@ -54,6 +54,8 @@ usage(std::ostream &os)
     "    write-uncorrectable   : mark blocks as corrupted / uncorrectable\n"
     "  path                    : block device|directory|file to act on\n"
     "\n"
+    "  -f, --force             : normally destructive behavior fail if the device\n"
+    "                            is mounted. This overrides this check.\n"
     "  -t, --rwtype <os|ata>   : use OS or ATA reads and writes (default: os)\n"
     "  -q, --quiet             : redirects stdout to /dev/null\n"
     "  -s, --start-block <lba> : block to start from (default: 0)\n"
@@ -74,6 +76,9 @@ Options::process_arg(const int          argc,
 {
   switch(opt)
     {
+    case 'f':
+      force = true;
+      break;
     case 'q':
       quiet++;
       break;
@@ -151,11 +156,12 @@ AppError
 Options::parse(const int argc,
                char * const argv[])
 {
-  static const char short_options[] = "hqt:r:s:e:o:i:c:";
+  static const char short_options[] = "hqft:r:s:e:o:i:c:";
   static const struct option long_options[] =
     {
       {"help",              no_argument, NULL, 'h'},
       {"quiet",             no_argument, NULL, 'q'},
+      {"force",             no_argument, NULL, 'f'},
       {"rwtype",      required_argument, NULL, 't'},
       {"retries",     required_argument, NULL, 'r'},
       {"start-block", required_argument, NULL, 's'},
