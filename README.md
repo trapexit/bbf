@@ -57,6 +57,16 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 
 # SUPPORT
 
+#### Contact / Issue submission
 * github.com: https://github.com/trapexit/bbf/issues
 * email: trapexit@spawn.link
+* twitter: https://twitter.com/_trapexit
+
+#### Support development
+* Bitcoin (BTC): 12CdMhEPQVmjz3SSynkAEuD5q9JmhTDCZA
+* Bitcoin Cash (BCH): 1AjPqZZhu7GVEs6JFPjHmtsvmDL4euzMzp
+* Ethereum (ETH): 0x09A166B11fCC127324C7fc5f1B572255b3046E94
+* Litecoin (LTC): LXAsq6yc6zYU3EbcqyWtHBrH1Ypx4GjUjm
+* PayPal: trapexit@spawn.link
+* Patreon: https://www.patreon.com/trapexit
 
