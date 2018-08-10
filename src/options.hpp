@@ -54,6 +54,7 @@ public:
     retries(0),
     start_block(0),
     end_block(~0ULL),
+    stepping(0),
     output_file(),
     input_file(),
     instruction(_INVALID),
@@ -81,6 +82,7 @@ public:
   long        retries;
   uint64_t    start_block;
   uint64_t    end_block;
+  uint64_t    stepping;
   std::string output_file;
   std::string input_file;
   std::string captcha;

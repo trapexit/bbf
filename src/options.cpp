@@ -62,6 +62,7 @@ usage(std::ostream &os)
     "  -q, --quiet             : redirects stdout to /dev/null\n"
     "  -s, --start-block <lba> : block to start from (default: 0)\n"
     "  -e, --end-block <lba>   : block to stop at (default: last block)\n"
+    "  -S, --stepping <n>      : number of logical blocks to read at a time (default: physical / logical)\n"
     "  -o, --output <file>     : file to write bad block list to\n"
     "                            defaults to ${HOME}/badblocks.<captcha>\n"
     "  -i, --input <file>      : file to read bad block list from\n"
@@ -101,6 +102,12 @@ Options::process_arg(const int          argc,
       end_block = ::strtoull(optarg,NULL,BASE10);
       if((end_block == ULLONG_MAX) && (errno == ERANGE))
         return AppError::argument_invalid("end block value is invalid");
+      break;
+    case 'S':
+      errno = 0;
+      stepping = ::strtoull(optarg,NULL,BASE10);
+      if((stepping == ULLONG_MAX) && (errno == ERANGE))
+        return AppError::argument_invalid("invalid stepping");
       break;
     case 'o':
       output_file = optarg;
@@ -160,7 +167,7 @@ AppError
 Options::parse(const int argc,
                char * const argv[])
 {
-  static const char short_options[] = "hqft:r:s:e:o:i:c:";
+  static const char short_options[] = "hqft:r:s:S:e:o:i:c:";
   static const struct option long_options[] =
     {
       {"help",              no_argument, NULL, 'h'},
@@ -170,6 +177,7 @@ Options::parse(const int argc,
       {"retries",     required_argument, NULL, 'r'},
       {"start-block", required_argument, NULL, 's'},
       {"end-block",   required_argument, NULL, 'e'},
+      {"stepping",    required_argument, NULL, 'S'},
       {"output",      required_argument, NULL, 'o'},
       {"input",       required_argument, NULL, 'i'},
       {"captcha",     required_argument, NULL, 'c'},

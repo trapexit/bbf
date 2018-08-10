@@ -36,19 +36,12 @@ static
 int
 is_badblock(BlkDev         &blkdev,
             const uint64_t  block,
-            const uint64_t  physical_block_size)
+            const uint64_t  stepping)
 {
-  char buf[physical_block_size];
+  uint64_t size = (stepping * blkdev.logical_block_size());
+  char buf[size];
 
-  return blkdev.read(block,buf,physical_block_size);
-}
-
-static
-int
-is_badblock(BlkDev         &blkdev,
-            const uint64_t  block)
-{
-  return is_badblock(blkdev,block,blkdev.physical_block_size());
+  return blkdev.read(block,buf,size);
 }
 
 static
@@ -69,7 +62,7 @@ scan_loop(BlkDev                &blkdev,
               start_block,end_block,start_block,badblocks);
 
   for(block  = start_block;
-      block != end_block;
+      block <= end_block;
       block += stepping)
     {
       if(signals::signaled_to_exit())
@@ -83,9 +76,11 @@ scan_loop(BlkDev                &blkdev,
                       start_block,end_block,block,badblocks);
         }
 
-      rv = is_badblock(blkdev,block);
-      if(rv >= 0)
+      rv = is_badblock(blkdev,block,stepping);
+      if(rv > 0)
         continue;
+      if(rv == 0)
+        break;
 
       current_time = Time::get_monotonic();
       Info::print(std::cout,start_time,current_time,
@@ -111,14 +106,35 @@ scan(BlkDev                &blkdev,
   uint64_t end_block;
   uint64_t stepping;
 
-  start_block = math::round_down(opts.start_block,blkdev.block_stepping());
+  stepping    = ((opts.stepping == 0) ?
+                 blkdev.block_stepping() :
+                 opts.stepping);
+  start_block = math::round_down(opts.start_block,stepping);
   end_block   = std::min(opts.end_block,blkdev.logical_block_count());
-  end_block   = math::round_up(end_block,blkdev.block_stepping());
-  stepping    = blkdev.block_stepping();
+  end_block   = math::round_up(end_block,stepping);
+  end_block   = std::min(end_block,blkdev.logical_block_count());
+
+  std::cout << "start block: "
+            << start_block << std::endl
+            << "end block: "
+            << end_block << std::endl
+            << "stepping: "
+            << stepping << std::endl
+            << "logical block size: "
+            << blkdev.logical_block_size() << std::endl
+            << "physical block size: "
+            << blkdev.physical_block_size() << std::endl
+            << "read size: "
+            << stepping * blkdev.logical_block_size()
+            << std::endl;
 
   signals::alarm(1);
 
-  std::cout << "\r\x1B[2KScanning: " << start_block << " - " << end_block << std::endl;
+  std::cout << "\r\x1B[2KScanning: "
+            << start_block
+            << " - "
+            << end_block
+            << std::endl;
   scan_loop(blkdev,start_block,end_block,stepping,badblocks);
   std::cout << std::endl;
 
@@ -165,9 +181,7 @@ scan(const Options &opts)
     input_file = output_file;
 
   rv = BadBlockFile::read(input_file,badblocks);
-  if(rv < 0)
-    std::cout << "Warning: unable to open " << input_file << std::endl;
-  else
+  if(rv > 0)
     std::cout << "Imported bad blocks from " << input_file << std::endl;
 
   set_blkdev_rwtype(blkdev,opts.rwtype);
