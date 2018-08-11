@@ -118,7 +118,7 @@ burnin_loop(BlkDev                &blkdev,
               start_block,end_block,start_block,badblocks);
 
   for(block  = start_block;
-      block != end_block;
+      block <= end_block;
       block += stepping)
     {
       if(signals::signaled_to_exit())
@@ -164,15 +164,36 @@ burnin(BlkDev                &blkdev,
   uint64_t stepping;
 
   retries     = opts.retries;
-  buffer_size = blkdev.physical_block_size();
-  start_block = math::round_down(opts.start_block,blkdev.block_stepping());
+  stepping    = ((opts.stepping == 0) ?
+                 blkdev.block_stepping() :
+                 opts.stepping);
+  buffer_size = (stepping * blkdev.logical_block_size());
+  start_block = math::round_down(opts.start_block,stepping);
   end_block   = std::min(opts.end_block,blkdev.logical_block_count());
-  end_block   = math::round_up(end_block,blkdev.block_stepping());
-  stepping    = blkdev.block_stepping();
+  end_block   = math::round_up(end_block,stepping);
+  end_block   = std::min(end_block,blkdev.logical_block_count());
+
+  std::cout << "start block: "
+            << start_block << std::endl
+            << "end block: "
+            << end_block << std::endl
+            << "stepping: "
+            << stepping << std::endl
+            << "logical block size: "
+            << blkdev.logical_block_size() << std::endl
+            << "physical block size: "
+            << blkdev.physical_block_size() << std::endl
+            << "r/w size: "
+            << stepping * blkdev.logical_block_size()
+            << std::endl;
 
   signals::alarm(1);
 
-  std::cout << "\r\x1B[2KBurning: " << start_block << " - " << end_block << std::endl;
+  std::cout << "\r\x1B[2KBurning: "
+            << start_block
+            << " - "
+            << end_block
+            << std::endl;
   burnin_loop(blkdev,start_block,end_block,stepping,buffer_size,badblocks,retries);
   std::cout << std::endl;
 
