@@ -127,6 +127,8 @@ BlkDev::open(const std::string &path,
   _logical_block_count  = (_size_in_bytes / _logical_block_size);
   _physical_block_count = (_size_in_bytes / _physical_block_size);
 
+  ::posix_fadvise(_fd,0,_size_in_bytes,POSIX_FADV_DONTNEED);
+
   return 0;
 
  error:
