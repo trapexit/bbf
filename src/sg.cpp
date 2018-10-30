@@ -327,6 +327,7 @@ namespace sg
     uint16_t tmpbuf[256];
     const uint16_t *buf16 = (const uint16_t*)buf;
 
+    ::memset(&ident,0,sizeof(sg::identity));
     for(unsigned int i = 0; i < 256; i++)
       tmpbuf[i] = ntohs(buf16[i]);
 
