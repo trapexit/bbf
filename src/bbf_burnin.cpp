@@ -33,6 +33,29 @@
 #include "time.hpp"
 
 static
+uint64_t
+trim_stepping(const BlkDev  &blkdev_,
+             const uint64_t  block_,
+             const uint64_t  stepping_)
+{
+  uint64_t size;
+  uint64_t stepping;
+
+  if(block_ >= blkdev_.logical_block_count())
+    return 0;
+
+  stepping = stepping_;
+  size = (blkdev_.logical_block_size() * (block_ + stepping));
+  while(size > blkdev_.size_in_bytes())
+    {
+      stepping--;
+      size = (blkdev_.logical_block_size() * (block_ + stepping));
+    }
+
+  return stepping;
+}
+
+static
 int
 write_read_compare(BlkDev         &blkdev,
                    const uint64_t  block,
@@ -93,13 +116,14 @@ int
 burnin_loop(BlkDev                &blkdev,
             const uint64_t         start_block,
             const uint64_t         end_block,
-            const uint64_t         stepping,
+            const uint64_t         stepping_,
             const uint64_t         buffer_size,
             std::vector<uint64_t> &badblocks,
             const int              retries)
 {
   int rv;
   uint64_t block;
+  uint64_t stepping;
   double current_time;
   std::vector<const char*> patterns;
   const std::vector<char> buf_0x00(buffer_size,0x00);
@@ -117,9 +141,8 @@ burnin_loop(BlkDev                &blkdev,
   Info::print(std::cout,start_time,current_time,
               start_block,end_block,start_block,badblocks);
 
-  for(block  = start_block;
-      block <= end_block;
-      block += stepping)
+  block = start_block;
+  while(block < end_block)
     {
       if(signals::signaled_to_exit())
         break;
@@ -132,7 +155,10 @@ burnin_loop(BlkDev                &blkdev,
                       start_block,end_block,block,badblocks);
         }
 
+      stepping = trim_stepping(blkdev,block,stepping_);
+
       rv = burn_block(blkdev,block,buffer_size,retries,patterns);
+      block += stepping;
       if(rv >= 0)
         continue;
 

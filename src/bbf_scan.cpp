@@ -33,6 +33,29 @@
 #include "time.hpp"
 
 static
+uint64_t
+trim_stepping(const BlkDev  &blkdev_,
+             const uint64_t  block_,
+             const uint64_t  stepping_)
+{
+  uint64_t size;
+  uint64_t stepping;
+
+  if(block_ >= blkdev_.logical_block_count())
+    return 0;
+
+  stepping = stepping_;
+  size = (blkdev_.logical_block_size() * (block_ + stepping));
+  while(size > blkdev_.size_in_bytes())
+    {
+      stepping--;
+      size = (blkdev_.logical_block_size() * (block_ + stepping));
+    }
+
+  return stepping;
+}
+
+static
 int
 is_badblock(BlkDev         &blkdev,
             const uint64_t  block,
@@ -49,11 +72,12 @@ int
 scan_loop(BlkDev                &blkdev,
           const uint64_t         start_block,
           const uint64_t         end_block,
-          const uint64_t         stepping,
+          const uint64_t         stepping_,
           std::vector<uint64_t> &badblocks)
 {
   int rv;
   uint64_t block;
+  uint64_t stepping;
   double current_time;
   const double start_time = Time::get_monotonic();
 
@@ -61,9 +85,8 @@ scan_loop(BlkDev                &blkdev,
   Info::print(std::cout,start_time,current_time,
               start_block,end_block,start_block,badblocks);
 
-  for(block  = start_block;
-      block <= end_block;
-      block += stepping)
+  block = start_block;
+  while(block < end_block)
     {
       if(signals::signaled_to_exit())
         break;
@@ -76,7 +99,10 @@ scan_loop(BlkDev                &blkdev,
                       start_block,end_block,block,badblocks);
         }
 
+      stepping = trim_stepping(blkdev,block,stepping_);
+
       rv = is_badblock(blkdev,block,stepping);
+      block += stepping;
       if(rv > 0)
         continue;
       if(rv == 0)
