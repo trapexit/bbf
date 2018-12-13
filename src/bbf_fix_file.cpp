@@ -88,7 +88,7 @@ fix_file_loop(BlkDev                  &blkdev,
       for(; j != ej; j++)
         {
           rv = fix_file_loop_core(blkdev,logical_block_size,retries,j);
-          if(rv)
+          if(rv < 0)
             break;
         }
     }

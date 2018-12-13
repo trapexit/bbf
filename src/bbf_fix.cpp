@@ -70,7 +70,7 @@ fix_loop_core(BlkDev             &blkdev,
     std::cout << "succeeded";
   std::cout << " (" << attempts << " attempts)" << std::endl;
 
-  return rv;
+  return 0;
 }
 
 static
@@ -85,7 +85,7 @@ fix_loop(BlkDev                      &blkdev,
   for(uint64_t i = 0, ei = badblocks.size(); i != ei; ++i)
     {
       rv = fix_loop_core(blkdev,logical_block_size,retries,badblocks[i]);
-      if(rv)
+      if(rv < 0)
         break;
     }
 

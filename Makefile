@@ -18,7 +18,7 @@ MKDIR = $(shell which mkdir)
 TOUCH = $(shell which touch)
 RM    = $(shell which rm)
 
-CFLAGS=-O0 -g
+CFLAGS=-O2 -g
 
 SRC = $(wildcard src/*.cpp)
 OBJ = $(SRC:src/%.cpp=obj/%.o)
