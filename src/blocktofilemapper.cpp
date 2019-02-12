@@ -57,6 +57,7 @@ BlockToFileMapper::BlockToFileMapper()
 static
 int
 get_blocks(const int                    fd,
+           const std::string           &basepath,
            const char                  *filename,
            const int                    blocksize,
            BlockToFileMapper::BlockMap &blockmap)
@@ -75,7 +76,7 @@ get_blocks(const int                    fd,
 
       key          = (fme->fe_physical / blocksize);
       value.first  = (fme->fe_length   / blocksize);
-      value.second = filename;
+      value.second = basepath + '/' + filename;
 
       blockmap.insert(std::make_pair(key,value));
     }
@@ -126,7 +127,7 @@ scan(const std::string           &basepath,
             if(fd == -1)
               break;
 
-            rv = get_blocks(fd,d->d_name,blocksize,blockmap);
+            rv = get_blocks(fd,basepath,d->d_name,blocksize,blockmap);
 
             ::close(fd);
           }

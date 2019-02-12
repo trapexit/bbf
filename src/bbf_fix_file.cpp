@@ -44,25 +44,45 @@ fix_file_loop_core(BlkDev             &blkdev,
   if(signals::signaled_to_exit())
     return -EINTR;
 
-  rv = -1;
-  for(attempts = 0; ((attempts <= retries) && (rv < 0)); attempts++)
-    rv = blkdev.read(badblock,buf,logical_block_size);
+  rv = blkdev.read(badblock,buf,logical_block_size);
+  for(attempts = 1; ((attempts <= retries) && (rv < 0)); attempts++)
+    {
+      std::cout << "Reading block "
+                << badblock
+                << " failed (attempt "
+                << attempts << " of " << retries
+                << "[" << Error::to_string(-rv) << "]: trying again"
+                << std::endl;
+      rv = blkdev.read(badblock,buf,logical_block_size);
+    }
 
   if(rv < 0)
     {
-      std::cout << "Reading block failed ("
+      std::cout << "Reading block "
+                << badblock
+                << " failed ("
                 << attempts << " attempts) "
                 << "[" << Error::to_string(-rv) << "]: using zeros"
                 << std::endl;
       memset(buf,0,logical_block_size);
     }
 
-  rv = -1;
-  for(attempts = 0; ((attempts <= retries) && (rv < 0)); attempts++)
-    rv = blkdev.write(badblock,buf,logical_block_size);
+  rv = blkdev.write(badblock,buf,logical_block_size);
+  for(attempts = 1; ((attempts <= retries) && (rv < 0)); attempts++)
+    {
+      std::cout << "Writing block "
+                << badblock
+                << " failed (attempt "
+                << attempts << " of " << retries
+                << "[" << Error::to_string(-rv) << "]: trying again"
+                << std::endl;
+      rv = blkdev.write(badblock,buf,logical_block_size);
+    }
 
   if(rv < 0)
-    std::cout << "Writing block failed ("
+    std::cout << "Writing block "
+              << badblock
+              << " failed ("
               << attempts << " attempts) "
               << "[" << Error::to_string(-rv) << "]"
               << std::endl;
