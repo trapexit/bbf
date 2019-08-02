@@ -280,15 +280,17 @@ BlkDev::sync(void)
 }
 
 int
-BlkDev::write_flagged_uncorrectable(const uint64_t lba)
+BlkDev::write_flagged_uncorrectable(const uint64_t lba_,
+                                    const bool     log_)
 {
-  return sg::write_flagged_uncorrectable(_fd,lba,_timeout);
+  return sg::write_flagged_uncorrectable(_fd,lba_,log_,_timeout);
 }
 
 int
-BlkDev::write_pseudo_uncorrectable(const uint64_t lba)
+BlkDev::write_pseudo_uncorrectable(const uint64_t lba_,
+                                   const bool     log_)
 {
-  return sg::write_pseudo_uncorrectable(_fd,lba,_timeout);
+  return sg::write_pseudo_uncorrectable(_fd,lba_,log_,_timeout);
 }
 
 const

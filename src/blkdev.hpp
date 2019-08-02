@@ -81,8 +81,10 @@ public:
 
 public:
   int sync(void);
-  int write_flagged_uncorrectable(const uint64_t lba);
-  int write_pseudo_uncorrectable(const uint64_t lba);
+  int write_flagged_uncorrectable(const uint64_t lba_,
+                                  const bool     log_);
+  int write_pseudo_uncorrectable(const uint64_t lba_,
+                                 const bool     log_);
 
 public:
   uint64_t logical_block_size(void) const { return _logical_block_size; }

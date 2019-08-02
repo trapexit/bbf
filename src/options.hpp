@@ -16,8 +16,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef __OPTIONS_HPP__
-#define __OPTIONS_HPP__
+#pragma once
 
 #include <stdint.h>
 
@@ -38,7 +37,10 @@ public:
       FIX_FILE,
       INFO,
       SCAN,
-      WRITE_UNCORRECTABLE,
+      WRITE_PSEUDO_UNCORRECTABLE_WL,
+      WRITE_PSEUDO_UNCORRECTABLE_WOL,
+      WRITE_FLAGGED_UNCORRECTABLE_WL,
+      WRITE_FLAGGED_UNCORRECTABLE_WOL,
       _END
     };
 
@@ -88,5 +90,3 @@ public:
   std::string captcha;
   bool        force;
 };
-
-#endif
