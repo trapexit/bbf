@@ -16,42 +16,65 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <stdint.h>
-
-#include <iostream>
-#include <utility>
-#include <vector>
-
 #include "badblockfile.hpp"
 #include "blkdev.hpp"
 #include "captcha.hpp"
 #include "errors.hpp"
 #include "options.hpp"
 
-int
-write_uncorrectable_loop(BlkDev                      &blkdev,
-                         const std::vector<uint64_t> &badblocks)
+#include <iostream>
+#include <utility>
+#include <vector>
+
+#include <stdint.h>
+
+namespace l
 {
-  int error;
+  static
+  int
+  write_pseudo_uncorrectable_loop(BlkDev                      &blkdev_,
+                                  const bool                   logging_,
+                                  const std::vector<uint64_t> &badblocks_)
+  {
+    int rv;
+    int error;
 
-  error = 0;
-  for(size_t i = 0, ei = badblocks.size(); i != ei; ++i)
-    {
-      int tmprv;
-      const uint64_t badblock = badblocks[i];
+    error = 0;
+    for(size_t i = 0, ei = badblocks_.size(); i != ei; ++i)
+      {
+        rv = blkdev_.write_pseudo_uncorrectable(badblocks_[i],logging_);
+        if(rv < 0)
+          error = rv;
+      }
 
-      tmprv = blkdev.write_flagged_uncorrectable(badblock);
-      if(tmprv < 0)
-        error = tmprv;
-    }
+    return error;
+  }
 
-  return error;
+  static
+  int
+  write_flagged_uncorrectable_loop(BlkDev                      &blkdev_,
+                                   const bool                   logging_,
+                                   const std::vector<uint64_t> &badblocks_)
+  {
+    int rv;
+    int error;
+
+    error = 0;
+    for(size_t i = 0, ei = badblocks_.size(); i != ei; ++i)
+      {
+        rv = blkdev_.write_flagged_uncorrectable(badblocks_[i],logging_);
+        if(rv < 0)
+          error = rv;
+      }
+
+    return error;
+  }
 }
 
 namespace bbf
 {
   AppError
-  write_uncorrectable(const Options &opts)
+  write_uncorrectable(const Options &opts_)
   {
     int rv;
     BlkDev blkdev;
@@ -59,28 +82,42 @@ namespace bbf
     std::string input_file;
     std::vector<uint64_t> badblocks;
 
-    input_file = opts.input_file;
+    input_file = opts_.input_file;
 
-    rv = blkdev.open_rdwr(opts.device,!opts.force);
+    rv = blkdev.open_rdwr(opts_.device,!opts_.force);
     if(rv < 0)
-      return AppError::opening_device(-rv,opts.device);
+      return AppError::opening_device(-rv,opts_.device);
 
     captcha = captcha::calculate(blkdev);
-    if(opts.captcha != captcha)
-      return AppError::captcha(opts.captcha,captcha);
+    if(opts_.captcha != captcha)
+      return AppError::captcha(opts_.captcha,captcha);
 
     if(input_file.empty())
       input_file = BadBlockFile::filepath(blkdev);
 
-    rv = BadBlockFile::read(opts.input_file,badblocks);
+    rv = BadBlockFile::read(opts_.input_file,badblocks);
     if(rv < 0)
-      return AppError::reading_badblocks_file(-rv,opts.input_file);
+      return AppError::reading_badblocks_file(-rv,opts_.input_file);
 
-    write_uncorrectable_loop(blkdev,badblocks);
+    switch(opts_.instruction)
+      {
+      case Options::WRITE_PSEUDO_UNCORRECTABLE_WL:
+        l::write_pseudo_uncorrectable_loop(blkdev,true,badblocks);
+        break;
+      case Options::WRITE_PSEUDO_UNCORRECTABLE_WOL:
+        l::write_pseudo_uncorrectable_loop(blkdev,false,badblocks);
+        break;
+      case Options::WRITE_FLAGGED_UNCORRECTABLE_WL:
+        l::write_flagged_uncorrectable_loop(blkdev,true,badblocks);
+        break;
+      case Options::WRITE_FLAGGED_UNCORRECTABLE_WOL:
+        l::write_flagged_uncorrectable_loop(blkdev,false,badblocks);
+        break;
+      }
 
     rv = blkdev.close();
     if(rv < 0)
-      return AppError::closing_device(-rv,opts.device);
+      return AppError::closing_device(-rv,opts_.device);
 
     return AppError::success();
   }

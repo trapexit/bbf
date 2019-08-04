@@ -57,7 +57,10 @@ process_instruction(const Options &opts)
       return bbf::file_blocks(opts);
     case Options::DUMP_FILES:
       return bbf::dump_files(opts);
-    case Options::WRITE_UNCORRECTABLE:
+    case Options::WRITE_PSEUDO_UNCORRECTABLE_WL:
+    case Options::WRITE_PSEUDO_UNCORRECTABLE_WOL:
+    case Options::WRITE_FLAGGED_UNCORRECTABLE_WL:
+    case Options::WRITE_FLAGGED_UNCORRECTABLE_WOL:
       return bbf::write_uncorrectable(opts);
     case Options::BURNIN:
       return bbf::burnin(opts);

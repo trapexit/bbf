@@ -31,6 +31,7 @@
 
 #define BASE10 10
 
+static
 void
 usage(std::ostream &os)
 {
@@ -38,22 +39,27 @@ usage(std::ostream &os)
     "usage: bbf [options] <instruction> <path>\n"
     "\n"
     "  instruction\n"
-    "    info                  : print out details of the device\n"
-    "    captcha               : print captcha for device\n"
-    "    scan                  : perform scan for bad blocks by reading\n"
-    "    fix                   : attempt to force drive to reallocate block\n"
-    "                            * on successful read of block, write it back\n"
-    "                            * on unsuccessful read of block, write zeros\n"
-    "    fix-file              : same behavior as 'fix' but specifically to a file's\n"
+    "    * info                : print out details of the device\n"
+    "    * captcha             : print captcha for device\n"
+    "    * scan                : perform scan for bad blocks by reading\n"
+    "    * fix                 : attempt to force drive to reallocate block\n"
+    "                            - on successful read of block, write it back\n"
+    "                            - on unsuccessful read of block, write zeros\n"
+    "    * fix-file            : same behavior as 'fix' but specifically to a file's\n"
     "                            blocks\n"
-    "    burnin                : attempts a non-destructive write, read, & verify\n"
-    "                            * read block, write block of 0x00, 0x55, 0xAA, 0xFF\n"
-    "                            * write back original block if was successfully read\n"
-    "                            * only if the last write,read,verify fails is it bad\n"
-    "    find-files            : given a list of bad blocks try to find affected files\n"
-    "    dump-files            : dump list of block ranges and files assocated with them\n"
-    "    file-blocks           : dump a list of individual blocks a file uses\n"
-    "    write-uncorrectable   : mark blocks as corrupted / uncorrectable\n"
+    "    * burnin              : attempts a non-destructive write, read, & verify\n"
+    "                            - read block, write block of 0x00, 0x55, 0xAA, 0xFF\n"
+    "                            - write back original block if was successfully read\n"
+    "                            - only if the last write,read,verify fails is it bad\n"
+    "    * find-files          : given a list of bad blocks try to find affected files\n"
+    "    * dump-files          : dump list of block ranges and files assocated with them\n"
+    "    * file-blocks         : dump a list of individual blocks a file uses\n"
+    "    * write-pseudo-uncorrectable-wl\n"
+    "    * write-pseudo-uncorrectable-wol\n"
+    "    * write-flagged-uncorrectable-wl\n"
+    "    * write-flagged-uncorrectable-wol\n"
+    "                          : mark blocks as pseudo or flagged uncorrectable\n"
+    "                            with or without logging\n"
     "  path                    : block device|directory|file to act on\n"
     "\n"
     "  -f, --force             : normally destructive behavior fail if the device\n"
@@ -62,7 +68,8 @@ usage(std::ostream &os)
     "  -q, --quiet             : redirects stdout to /dev/null\n"
     "  -s, --start-block <lba> : block to start from (default: 0)\n"
     "  -e, --end-block <lba>   : block to stop at (default: last block)\n"
-    "  -S, --stepping <n>      : number of logical blocks to read at a time (default: physical / logical)\n"
+    "  -S, --stepping <n>      : number of logical blocks to read at a time\n"
+    "                            (default: physical / logical)\n"
     "  -o, --output <file>     : file to write bad block list to\n"
     "                            defaults to ${HOME}/badblocks.<captcha>\n"
     "  -i, --input <file>      : file to read bad block list from\n"
@@ -89,7 +96,7 @@ Options::process_arg(const int          argc,
       errno = 0;
       retries = ::strtol(optarg,NULL,BASE10);
       if(((errno == ERANGE) && (retries == LONG_MAX)) || (retries < 1))
-       return AppError::argument_invalid("retries invalid");
+        return AppError::argument_invalid("retries invalid");
       break;
     case 's':
       errno = 0;
@@ -157,8 +164,14 @@ Options::instr_from_string(const std::string str)
     return Options::DUMP_FILES;
   if(str == "file-blocks")
     return Options::FILE_BLOCKS;
-  if(str == "write-uncorrectable")
-    return Options::WRITE_UNCORRECTABLE;
+  if(str == "write-pseudo-uncorrectable-wl")
+    return Options::WRITE_PSEUDO_UNCORRECTABLE_WL;
+  if(str == "write-pseudo-uncorrectable-wol")
+    return Options::WRITE_PSEUDO_UNCORRECTABLE_WOL;
+  if(str == "write-flagged-uncorrectable-wl")
+    return Options::WRITE_FLAGGED_UNCORRECTABLE_WL;
+  if(str == "write-flagged-uncorrectable-wol")
+    return Options::WRITE_FLAGGED_UNCORRECTABLE_WOL;
 
   return Options::_INVALID;
 }
@@ -230,7 +243,10 @@ Options::validate(void) const
       break;
     case Options::FIX:
     case Options::FIX_FILE:
-    case Options::WRITE_UNCORRECTABLE:
+    case Options::WRITE_PSEUDO_UNCORRECTABLE_WL:
+    case Options::WRITE_PSEUDO_UNCORRECTABLE_WOL:
+    case Options::WRITE_FLAGGED_UNCORRECTABLE_WL:
+    case Options::WRITE_FLAGGED_UNCORRECTABLE_WOL:
       if(captcha.empty())
         return AppError::argument_required("captcha");
     case Options::FIND_FILES:

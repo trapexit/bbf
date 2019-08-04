@@ -421,44 +421,58 @@ namespace sg
   }
 
   int
-  write_uncorrectable(const int      fd,
-                      const uint64_t lba,
-                      const uint8_t  type,
-                      const int      timeout)
+  write_uncorrectable(const int      fd_,
+                      const uint64_t lba_,
+                      const uint8_t  type_,
+                      const int      timeout_)
   {
     int rv;
     struct ata_tf tf;
 
-    tf_init(&tf,ATA_OP_WRITE_UNC_EXT,lba,1);
-    tf.lob.feat = type;
+    tf_init(&tf,ATA_OP_WRITE_UNC_EXT,lba_,1);
+    tf.lob.feat = type_;
     tf.is_lba48 = 1;
 
-    rv = exec(fd,SG_READ,SG_PIO,&tf,NULL,0,timeout);
+    rv = exec(fd_,SG_READ,SG_PIO,&tf,NULL,0,timeout_);
     if(rv < 0)
       {
         char buf[520];
 
-        tf_init(&tf,ATA_OP_WRITE_LONG_ONCE,lba,1);
+        tf_init(&tf,ATA_OP_WRITE_LONG_ONCE,lba_,1);
         memset(buf,0xA5,sizeof(buf));
-        rv = exec(fd,SG_WRITE,SG_PIO,&tf,buf,sizeof(buf),timeout);
+        rv = exec(fd_,SG_WRITE,SG_PIO,&tf,buf,sizeof(buf),timeout_);
       }
 
     return rv;
   }
 
   int
-  write_flagged_uncorrectable(const int      fd,
-                              const uint64_t lba,
-                              const int      timeout)
+  write_flagged_uncorrectable(const int      fd_,
+                              const uint64_t lba_,
+                              const bool     log_,
+                              const int      timeout_)
   {
-    return write_uncorrectable(fd,lba,sg::ATA_WRITE_UNCORRECTABLE_EXT_FLAGGED,timeout);
+    uint8_t instr;
+
+    instr = (log_ ?
+             sg::ATA_WRITE_UNCORRECTABLE_EXT_FLAGGED_W_LOGGING :
+             sg::ATA_WRITE_UNCORRECTABLE_EXT_FLAGGED_WO_LOGGING);
+
+    return write_uncorrectable(fd_,lba_,instr,timeout_);
   }
 
   int
-  write_pseudo_uncorrectable(const int      fd,
-                             const uint64_t lba,
-                             const int      timeout)
+  write_pseudo_uncorrectable(const int      fd_,
+                             const uint64_t lba_,
+                             const bool     log_,
+                             const int      timeout_)
   {
-    return write_uncorrectable(fd,lba,sg::ATA_WRITE_UNCORRECTABLE_EXT_PSEUDO,timeout);
+    uint8_t instr;
+
+    instr = (log_ ?
+             sg::ATA_WRITE_UNCORRECTABLE_EXT_PSEUDO_W_LOGGING :
+             sg::ATA_WRITE_UNCORRECTABLE_EXT_PSEUDO_WO_LOGGING);
+
+    return write_uncorrectable(fd_,lba_,instr,timeout_);
   }
 }

@@ -53,10 +53,48 @@ namespace sg
       ATA_STAT_ERR  = (1 << 0)
     };
 
+
+  /*
+    7.71.2.2 Pseudo Uncorrectable Logical Sectors
+
+    If the FEATURE field (7:0) contains a value of 55h, the WRITE
+    UNCORRECTABLE EXT command shall cause the device to indicate a
+    failure when subsequent reads to any of the logical sectors that
+    are contained in the physical block of the specified logical
+    sector are performed. These logical sectors are referred to as
+    pseudo uncorrectable logical sectors. Whenever a pseudo
+    uncorrectable logical sector is accessed via a read command the
+    device shall perform normal error recovery to the fullest extent
+    until:
+
+    a) the error recovery process is completed, the UNCORRECTABLEERROR
+    bit is set to one, and the ERROR bit is set to one; or
+    b) a command time-out that applies to error recovery control
+    occurs before error recovery is completed and an error is reported
+    as a result of the command time-out (see 8.3.3). As part of
+    reading a pseudo uncorrectable logical sector, the device shall
+    perform error logging (e.g., SMART, device statistics) in the same
+    manner as an Uncorrectable error (see 6.3.9).
+
+    7.71.2.3 Flagged Uncorrectable Logical Sectors
+
+    If the FEATURE field (7:0) contains a value of AAh, the WRITE
+    UNCORRECTABLE EXT command shall cause the device to mark the
+    specified logical sectors as flagged uncorrectable. Marking a
+    logical sector as flagged uncorrectable shall cause the device to
+    indicate a failure when subsequent reads to the specified logical
+    sector are processed.As part of reading a flagged uncorrectable
+    logical sector, the device should not perform error logging (e.g.,
+    SMART, device statistics) in the same manner as an Uncorrectable
+    error (see 6.3.9)
+  */
+
   enum
     {
-      ATA_WRITE_UNCORRECTABLE_EXT_PSEUDO  = 0x55,
-      ATA_WRITE_UNCORRECTABLE_EXT_FLAGGED = 0xAA
+      ATA_WRITE_UNCORRECTABLE_EXT_PSEUDO_W_LOGGING   = 0x55,
+      ATA_WRITE_UNCORRECTABLE_EXT_PSEUDO_WO_LOGGING  = 0x5A,
+      ATA_WRITE_UNCORRECTABLE_EXT_FLAGGED_W_LOGGING  = 0xA5,
+      ATA_WRITE_UNCORRECTABLE_EXT_FLAGGED_WO_LOGGING = 0xAA
     };
 
   enum
@@ -201,13 +239,15 @@ namespace sg
                       const int      timeout);
 
   int
-  write_flagged_uncorrectable(const int      fd,
-                              const uint64_t lba,
-                              const int      timeout);
+  write_flagged_uncorrectable(const int      fd_,
+                              const uint64_t lba_,
+                              const bool     log_,
+                              const int      timeout_);
   int
-  write_pseudo_uncorrectable(const int      fd,
-                             const uint64_t lba,
-                             const int      timeout);
+  write_pseudo_uncorrectable(const int      fd_,
+                             const uint64_t lba_,
+                             const bool     log_,
+                             const int      timeout_);
 }
 
 #endif
