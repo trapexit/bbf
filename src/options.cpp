@@ -76,6 +76,7 @@ usage(std::ostream &os)
     "                            defaults to ${HOME}/badblocks.<captcha>\n"
     "  -r, --retries <count>   : number of retries on certain reads & writes\n"
     "  -c, --captcha <captcha> : needed when performing destructive operations\n"
+    "  -M, --max-errors <n>    : max r/w errors before exiting (default: 1024)\n"
     "\n";
 }
 
@@ -115,6 +116,14 @@ Options::process_arg(const int          argc,
       stepping = ::strtoull(optarg,NULL,BASE10);
       if((stepping == ULLONG_MAX) && (errno == ERANGE))
         return AppError::argument_invalid("invalid stepping");
+      if((stepping > 65536) || (stepping <= 1))
+        return AppError::argument_invalid("stepping must be >= 1 && <= 65536");
+      break;
+    case 'M':
+      errno = 0;
+      max_errors = ::strtoull(optarg,NULL,BASE10);
+      if((max_errors == ULLONG_MAX) && (errno == ERANGE))
+        return AppError::argument_invalid("max errors value is invalid");
       break;
     case 'o':
       output_file = optarg;
@@ -194,6 +203,7 @@ Options::parse(const int argc,
       {"output",      required_argument, NULL, 'o'},
       {"input",       required_argument, NULL, 'i'},
       {"captcha",     required_argument, NULL, 'c'},
+      {"max-errors",  required_argument, NULL, 'M'},
       {NULL,                          0, NULL,   0}
     };
 

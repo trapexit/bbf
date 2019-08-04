@@ -16,15 +16,14 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef __BLKDEV_HPP__
-#define __BLKDEV_HPP__
+#pragma once
 
-#include <stdlib.h>
-#include <stdint.h>
+#include "sg.hpp"
 
 #include <string>
 
-#include "sg.hpp"
+#include <stdlib.h>
+#include <stdint.h>
 
 class BlkDev
 {
@@ -45,18 +44,22 @@ public:
 
 public:
   ssize_t os_read(const uint64_t  lba,
+                  const uint64_t  blocks,
                   void           *buf,
                   const size_t    buflen);
 
   ssize_t os_write(const uint64_t  lba,
+                   const uint64_t  blocks,
                    const void     *buf,
                    const size_t    buflen);
 
   ssize_t ata_read(const uint64_t  lba,
+                   const uint64_t  blocks,
                    void           *buf,
                    const size_t    buflen);
 
   ssize_t ata_write(const uint64_t  lba,
+                    const uint64_t  blocks,
                     const void     *buf,
                     const size_t    buflen);
 
@@ -73,9 +76,12 @@ public:
   void set_rw_ata(void) { _rw_type = ATA; }
   void set_rw_os(void)  { _rw_type = OS;  }
   ssize_t read(const uint64_t  lba,
+               const uint64_t  blocks,
                void           *buf,
                const size_t    buflen);
+
   ssize_t write(const uint64_t  lba,
+                const uint64_t  blocks,
                 const void     *buf,
                 const size_t    buflen);
 
@@ -122,5 +128,3 @@ private:
   int _fd;
   int _timeout;
 };
-
-#endif

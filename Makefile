@@ -19,6 +19,8 @@ TOUCH = $(shell which touch)
 RM    = $(shell which rm)
 
 CFLAGS=-O2 -g
+LDLIBS=-lrt
+LDFLAGS=
 
 SRC = $(wildcard src/*.cpp)
 OBJ = $(SRC:src/%.cpp=obj/%.o)
@@ -26,10 +28,10 @@ OBJ = $(SRC:src/%.cpp=obj/%.o)
 all: $(TARGET)
 
 $(TARGET): obj/obj-stamp $(OBJ)
-	$(CXX) $(CFLAGS) $(OBJ) -o $(TARGET) $(LDFLAGS)
+	$(CXX) $(CFLAGS) $(OBJ) -o $(TARGET) $(LDLIBS) $(LDFLAGS)
 
 static: obj/obj-stamp $(OBJ)
-	$(CXX) -static $(CFLAGS) $(OBJ) -o $(TARGET) $(LDFLAGS)
+	$(CXX) -static $(CFLAGS) $(OBJ) -o $(TARGET) $(LDLIBS) $(LDFLAGS)
 
 obj/obj-stamp:
 	$(MKDIR) -p obj

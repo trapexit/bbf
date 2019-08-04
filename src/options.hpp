@@ -57,6 +57,7 @@ public:
     start_block(0),
     end_block(~0ULL),
     stepping(0),
+    max_errors(1024),
     output_file(),
     input_file(),
     instruction(_INVALID),
@@ -85,6 +86,7 @@ public:
   uint64_t    start_block;
   uint64_t    end_block;
   uint64_t    stepping;
+  uint64_t    max_errors;
   std::string output_file;
   std::string input_file;
   std::string captcha;

@@ -16,17 +16,18 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "sensedata.hpp"
+#include "sg.hpp"
+
 #include <errno.h>
 #include <linux/hdreg.h>
+#include <stddef.h>
 #include <scsi/sg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-
-#include "sensedata.hpp"
-#include "sg.hpp"
 
 static
 inline
@@ -365,39 +366,45 @@ namespace sg
   }
 
   int
-  read_block(const int       fd,
-             const uint64_t  lba,
-             const uint64_t  logical_block_size,
-             void           *buf,
-             const size_t    buflen,
-             const int       timeout)
+  read_block(const int       fd_,
+             const uint64_t  lba_,
+             const uint64_t  blocks_,
+             void           *buf_,
+             const size_t    buflen_,
+             const int       timeout_)
   {
-    int           instruction;
+    int blocks;
+    int instruction;
     struct ata_tf tf;
-    const int     nsect = (next_power_of_2(buflen) / logical_block_size);
 
-    instruction = ((lba > LBA28_LIMIT) ? ATA_OP_READ_PIO_EXT : ATA_OP_READ_PIO);
-    tf_init(&tf,instruction,lba,nsect);
+    blocks = blocks_;
+    if(blocks >= 65536)
+      blocks = 0;
+    instruction = ATA_OP_READ_PIO_EXT;
+    tf_init(&tf,instruction,lba_,blocks);
 
-    return exec(fd,SG_READ,SG_PIO,&tf,buf,buflen,timeout);
+    return exec(fd_,SG_READ,SG_PIO,&tf,buf_,buflen_,timeout_);
   }
 
   int
-  write_block(const int       fd,
-              const uint64_t  lba,
-              const uint64_t  logical_block_size,
-              const void     *buf,
-              const size_t    buflen,
-              const int       timeout)
+  write_block(const int       fd_,
+              const uint64_t  lba_,
+              const uint64_t  blocks_,
+              const void     *buf_,
+              const size_t    buflen_,
+              const int       timeout_)
   {
-    int           instruction;
+    int blocks;
+    int instruction;
     struct ata_tf tf;
-    const int     nsect = (next_power_of_2(buflen) / logical_block_size);
 
-    instruction = ((lba > LBA28_LIMIT) ? ATA_OP_WRITE_PIO_EXT : ATA_OP_WRITE_PIO);
-    tf_init(&tf,instruction,lba,nsect);
+    blocks = blocks_;
+    if(blocks >= 65536)
+      blocks = 0;
+    instruction = ATA_OP_WRITE_PIO_EXT;
+    tf_init(&tf,instruction,lba_,blocks);
 
-    return exec(fd,SG_WRITE,SG_PIO,&tf,(void*)buf,buflen,timeout);
+    return exec(fd_,SG_WRITE,SG_PIO,&tf,(void*)buf_,buflen_,timeout_);
   }
 
   int

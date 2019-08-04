@@ -219,7 +219,7 @@ namespace sg
   int
   read_block(const int       fd,
              const uint64_t  lba,
-             const uint64_t  logical_block_size,
+             const uint64_t  blocks,
              void           *buf,
              const size_t    buflen,
              const int       timeout);
@@ -227,7 +227,7 @@ namespace sg
   int
   write_block(const int       fd,
               const uint64_t  lba,
-              const uint64_t  logical_block_size,
+              const uint64_t  blocks,
               const void     *buf,
               const size_t    buflen,
               const int       timeout);
