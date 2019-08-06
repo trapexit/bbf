@@ -16,8 +16,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef __BADBLOCKFILE_HPP__
-#define __BADBLOCKFILE_HPP__
+#pragma once
 
 #include <stdint.h>
 
@@ -37,5 +36,3 @@ namespace BadBlockFile
   int write(const std::string           &filepath,
             const std::vector<uint64_t> &blocks);
 };
-
-#endif

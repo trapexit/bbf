@@ -16,8 +16,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef __BBF_CAPTCHA_HPP__
-#define __BBF_CAPTCHA_HPP__
+#pragma once
 
 class AppError;
 class Options;
@@ -27,5 +26,3 @@ namespace bbf
   AppError
   captcha(const Options &opts);
 }
-
-#endif

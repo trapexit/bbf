@@ -34,7 +34,7 @@ static
 int
 fix_file_loop_core(BlkDev             &blkdev_,
                    char               *buf_,
-                   const size_t        buflen_,
+                   const uint64_t      buflen_,
                    const unsigned int  retries_,
                    const uint64_t      badblock_)
 {
@@ -99,12 +99,12 @@ fix_file_loop(BlkDev                  &blkdev_,
 {
   int rv;
   char *buf;
-  size_t buflen;
+  uint64_t buflen;
 
   buflen = blkdev_.logical_block_size();
   buf = new char[buflen];
 
-  for(size_t i = 0, ei = blockvector_.size(); i != ei; i++)
+  for(uint64_t i = 0, ei = blockvector_.size(); i != ei; i++)
     {
       uint64_t        j = blockvector_[i].block;
       const uint64_t ej = blockvector_[i].length + j;

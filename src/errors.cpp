@@ -16,21 +16,26 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <errno.h>
-#include <string.h>
-
 #include "errors.hpp"
 #include "sensedata.hpp"
+#include "sg.hpp"
+
+#include <errno.h>
+#include <string.h>
 
 namespace Error
 {
   const
   char *
-  to_string(const int error)
+  to_string(const int err_)
   {
-    if(error < 256)
-      return ::strerror(error);
-    return SenseData::error_to_string(error);
+    if(err_ < 256)
+      return ::strerror(err_);
+    if((err_ & 0x0000FF00) == 0x00000100)
+      return HostCode::to_string(err_);
+    if((err_ & 0x0000FF00) == 0x00000200)
+      return DriverCode::to_string(err_);
+    return SenseData::error_to_string(err_);
   }
 }
 

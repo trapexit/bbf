@@ -24,6 +24,31 @@
 #include "num.hpp"
 #include "options.hpp"
 
+namespace l
+{
+  const
+  char*
+  form_factor(const sg::identity &ident_)
+  {
+    switch(ident_.form_factor)
+      {
+      default:
+      case sg::FORM_FACTOR_UNKNOWN:
+        return "unknown";
+      case sg::FORM_FACTOR_5_25:
+        return "5.25\"";
+      case sg::FORM_FACTOR_3_5:
+        return "3.5\"";
+      case sg::FORM_FACTOR_2_5:
+        return "2.5\"";
+      case sg::FORM_FACTOR_1_8:
+        return "1.8\"";
+      case sg::FORM_FACTOR_LT_1_8:
+        return "<1.8\"";
+      }
+  }
+}
+
 namespace bbf
 {
   AppError
@@ -31,6 +56,7 @@ namespace bbf
   {
     int rv;
     BlkDev blkdev;
+    sg::identity ident;
 
     rv = blkdev.open_read(opts.device);
     if(rv < 0)
@@ -40,15 +66,34 @@ namespace bbf
 
     if(blkdev.has_identity())
       {
+        ident = blkdev.identity();
         std::cout
-          << " - serial_number: "             << blkdev.serial_number() << std::endl
-          << " - firmware_revision: "         << blkdev.firmware_revision() << std::endl
-          << " - model_number: "              << blkdev.model_number() << std::endl
-          << " - RPM: "                       << blkdev.rpm() << std::endl
+          << " - serial_number: "             << ident.serial_number << std::endl
+          << " - firmware_revision: "         << ident.firmware_revision << std::endl
+          << " - model_number: "              << ident.model_number << std::endl
+          << " - RPM: "                       << ident.rpm << std::endl
           << " - features:"                   << std::endl
-          << "   - write_uncorrectable_ext: " << blkdev.write_uncorrectable_ext() << std::endl
-          << "   - smart_supported: "         << blkdev.smart_supported() << std::endl
-          << "   - smart_enabled: "           << blkdev.smart_enabled() << std::endl;
+          << "   - form_factor: "             << l::form_factor(ident) << std::endl
+          << "   - write_uncorrectable: "     << ident.write_uncorrectable << std::endl
+          << "   - smart_supported: "         << ident.smart_supported << std::endl
+          << "   - smart_enabled: "           << ident.smart_enabled << std::endl
+          << "   - security_supported: "      << ident.security_supported << std::endl
+          << "   - security_enabled: "        << ident.security_enabled << std::endl
+          << "   - security_locked: "         << ident.security_locked << std::endl
+          << "   - security_frozen: "         << ident.security_frozen << std::endl
+          << "   - security_count_expired: "  << ident.security_count_expired << std::endl
+          << "   - security_enhanced_erase_supported: " << ident.security_enhanced_erase_supported << std::endl
+          << "   - security_normal_erase_time: "   << ident.security_normal_erase_time << std::endl
+          << "   - security_enhanced_erase_time: " << ident.security_enhanced_erase_time << std::endl
+          << "   - block_erase: "             << ident.block_erase << std::endl
+          << "   - overwrite: "               << ident.overwrite << std::endl
+          << "   - crypto_scramble: "         << ident.crypto_scramble << std::endl
+          << "   - sanitize: "                << ident.sanitize << std::endl
+          << "   - supports_sata_gen1: "       << ident.supports_sata_gen1 << std::endl
+          << "   - supports_sata_gen2: "       << ident.supports_sata_gen2 << std::endl
+          << "   - supports_sata_gen3: "       << ident.supports_sata_gen3 << std::endl
+          << "   - trim_supported: "          << ident.trim_supported << std::endl
+          ;
       }
 
     std::cout

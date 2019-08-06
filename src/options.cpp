@@ -16,18 +16,18 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "errors.hpp"
+#include "options.hpp"
+
+#include <string>
+#include <iostream>
+
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <string>
-#include <iostream>
-
-#include "errors.hpp"
-#include "options.hpp"
 
 #define BASE10 10
 
@@ -60,6 +60,12 @@ usage(std::ostream &os)
     "    * write-flagged-uncorrectable-wol\n"
     "                          : mark blocks as pseudo or flagged uncorrectable\n"
     "                            with or without logging\n"
+    "    * security-erase\n"
+    "    * enhanced-security-erase\n"
+    "                          : Erases all content on drive. Generally normal\n"
+    "                            erase overwrites all users data with zeros and\n"
+    "                            enhanced overwrites all data (including relocated)\n"
+    "                            with vendor specific patterns.\n"
     "  path                    : block device|directory|file to act on\n"
     "\n"
     "  -f, --force             : normally destructive behavior fail if the device\n"
@@ -181,6 +187,10 @@ Options::instr_from_string(const std::string str)
     return Options::WRITE_FLAGGED_UNCORRECTABLE_WL;
   if(str == "write-flagged-uncorrectable-wol")
     return Options::WRITE_FLAGGED_UNCORRECTABLE_WOL;
+  if(str == "security-erase")
+    return Options::SECURITY_ERASE;
+  if(str == "enhanced-security-erase")
+    return Options::ENHANCED_SECURITY_ERASE;
 
   return Options::_INVALID;
 }
@@ -253,6 +263,8 @@ Options::validate(void) const
       break;
     case Options::FIX:
     case Options::FIX_FILE:
+    case Options::SECURITY_ERASE:
+    case Options::ENHANCED_SECURITY_ERASE:
     case Options::WRITE_PSEUDO_UNCORRECTABLE_WL:
     case Options::WRITE_PSEUDO_UNCORRECTABLE_WOL:
     case Options::WRITE_FLAGGED_UNCORRECTABLE_WL:
@@ -260,6 +272,8 @@ Options::validate(void) const
       if(captcha.empty())
         return AppError::argument_required("captcha");
     case Options::FIND_FILES:
+      if(input_file.empty())
+        return AppError::argument_required("input file");
       break;
     case Options::DUMP_FILES:
     case Options::INFO:

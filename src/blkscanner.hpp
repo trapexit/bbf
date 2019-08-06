@@ -16,8 +16,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef __BLKSCANNER_HPP__
-#define __BLKSCANNER_HPP__
+#pragma once
 
 class BlkScanner
 {
@@ -30,5 +29,3 @@ private:
   uint64_t  _start_block;
   uint64_t  _end_block;
 };
-
-#endif

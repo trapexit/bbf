@@ -16,8 +16,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef __BLOCKTOFILEMAPPER_HPP__
-#define __BLOCKTOFILEMAPPER_HPP__
+#pragma once
 
 #include <stdint.h>
 #include <string>
@@ -42,5 +41,3 @@ public:
 private:
   BlockMap _blockmap;
 };
-
-#endif

@@ -19,6 +19,7 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
  * find files given list of blocks
  * dump list of files and associated block ranges
  * dump list of blocks used by a file
+ * issue secure drive erasure
 
 # OPTIONS
 
@@ -34,6 +35,7 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 * **-i, --input <file>** : file to read bad block list from
 * **-r, --retries <count>** : number of retries on certain reads & writes
 * **-c, --captcha <captcha>** : needed when performing destructive operations
+* **-M, --maxerrors <n>** : max r/w errors before exiting (default: 1024)
 
 ### instructions ###
 
@@ -46,7 +48,13 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 * **find-files** : given a list of bad blocks try to find affected files
 * **dump-files** : dump list of block ranges and files assocated with them
 * **file-blocks** : dump a list of individual blocks a file uses
-* **write-uncorrectable** : mark blocks as corrupted / uncorrectable
+* **write-pseudo-uncorrectable-wl** : mark blocks as corrupted / uncorrectable
+* **write-pseudo-uncorrectable-wol** : mark blocks as corrupted / uncorrectable
+* **write-flagged-uncorrectable-wl** : mark blocks as corrupted / uncorrectable
+* **write-flagged-uncorrectable-wol** : mark blocks as corrupted / uncorrectable
+* **security-erase** : secure erase drive by overwriting data with zeros
+* **enhanced-security-erase** : secure erase drive by overwriting data with vendor specific patterns
+
 
 # NOTES
 
@@ -60,15 +68,32 @@ A captcha is required for destructive operations. This helps with preventing the
 
 ```
 # bbf info /dev/sdb
-/dev/sdb:
- - serial_number: Z8400VR0
- - firmware_revision: AR13
- - model_number: ST8000AS0002-1NA17Z                     E
- - RPM: 5980
+/dev/sdi:
+ - serial_number: XXXXXXXX
+ - firmware_revision: SC61
+ - model_number: ST8000VN0022-2EL112
+ - RPM: 7200
  - features:
-   - write_uncorrectable_ext: 1
+   - form_factor: 3.5"
+   - write_uncorrectable: 1
    - smart_supported: 1
    - smart_enabled: 1
+   - security_supported: 1
+   - security_enabled: 0
+   - security_locked: 0
+   - security_frozen: 0
+   - security_count_expired: 0
+   - security_enhanced_erase_supported: 1
+   - security_normal_erase_time: 698
+   - security_enhanced_erase_time: 698
+   - block_erase: 0
+   - overwrite: 1
+   - crypto_scramble: 0
+   - sanitize: 1
+   - supports_sata_gen1: 1
+   - supports_sata_gen2: 1
+   - supports_sata_gen3: 1
+   - trim_supported: 0
  - block_size:
    - physical: 4096
    - logical: 512
@@ -98,6 +123,7 @@ Z8400VR0
 # bbf -i ~/badblocks.Z8400VR0 -c Z8400VR0 fix /dev/sdb
 ```
 
+
 # BUILD / INSTALL
 
 ```
@@ -108,21 +134,24 @@ $ make
 $ sudo cp -av bbf /usr/local/bin
 ```
 
+
 # SUPPORT
 
 #### Contact / Issue submission
+
 * github.com: https://github.com/trapexit/bbf/issues
 * email: trapexit@spawn.link
 * twitter: https://twitter.com/_trapexit
+* reddit: https://www.reddit.com/user/trapexit
+* discord: https://discord.gg/MpAr69V
 
 #### Support development
 
 This software is free to use and released under a very liberal license. That said if you like this software and would like to support its development donations are welcome.
 
+* Patreon: https://www.patreon.com/trapexit
+* PayPal: trapexit@spawn.link
 * Bitcoin (BTC): 12CdMhEPQVmjz3SSynkAEuD5q9JmhTDCZA
 * Bitcoin Cash (BCH): 1AjPqZZhu7GVEs6JFPjHmtsvmDL4euzMzp
 * Ethereum (ETH): 0x09A166B11fCC127324C7fc5f1B572255b3046E94
 * Litecoin (LTC): LXAsq6yc6zYU3EbcqyWtHBrH1Ypx4GjUjm
-* Ripple (XRP): rNACR2hqGjpbHuCKwmJ4pDpd2zRfuRATcE
-* PayPal: trapexit@spawn.link
-* Patreon: https://www.patreon.com/trapexit

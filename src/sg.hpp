@@ -16,8 +16,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#ifndef __SG_HPP__
-#define __SG_HPP__
+#pragma once
 
 #include <arpa/inet.h>
 #include <stdint.h>
@@ -42,7 +41,59 @@
 #define SG_ATA_PROTO_DMA	(6 << 1)
 
 #define SG_CHECK_CONDITION 0x02
-#define SG_DRIVER_SENSE    0x08
+
+namespace StatusCode
+{
+  enum
+    {
+      GOOD                 = (0x00 << 1),
+      CHECK_CONDITION      = (0x01 << 1),
+      CONDITION_GOOD       = (0x02 << 1),
+      BUSY                 = (0x04 << 1),
+      INTERMEDIATE_GOOD    = (0x08 << 1),
+      INTERMEDIATE_C_GOOD  = (0x0a << 1),
+      RESERVATION_CONFLICT = (0x0c << 1)
+    };
+}
+
+namespace HostCode
+{
+  enum
+    {
+      OK         = 0x00000100,
+      NO_CONNECT = 0x00000101,
+      BUS_BUSY   = 0x00000102,
+      TIME_OUT   = 0x00000103,
+      BAD_TARGET = 0x00000104,
+      ABORT      = 0x00000105,
+      PARITY     = 0x00000106,
+      ERROR      = 0x00000107,
+      RESET      = 0x00000108,
+      BAD_INTR   = 0x00000109
+    };
+
+  const char* to_string(const int err);
+  const int   to_errno(const int err);
+}
+
+namespace DriverCode
+{
+  enum
+    {
+      OK      = 0x00000200,
+      BUSY    = 0x00000201,
+      SOFT    = 0x00000202,
+      MEDIA   = 0x00000203,
+      ERROR   = 0x00000204,
+      INVALID = 0x00000205,
+      TIMEOUT = 0x00000206,
+      HARD    = 0x00000207,
+      SENSE   = 0x00000208
+    };
+
+  const char* to_string(const int err);
+  const int   to_errno(const int err);
+}
 
 namespace sg
 {
@@ -52,7 +103,6 @@ namespace sg
       ATA_STAT_DRQ  = (1 << 3),
       ATA_STAT_ERR  = (1 << 0)
     };
-
 
   /*
     7.71.2.2 Pseudo Uncorrectable Logical Sectors
@@ -145,7 +195,7 @@ namespace sg
       ATA_OP_FLUSHCACHE_EXT         = 0xea,
       ATA_OP_IDENTIFY               = 0xec,
       ATA_OP_SETFEATURES            = 0xef,
-      ATA_OP_SECURITY_SET_PASS      = 0xf1,
+      ATA_OP_SECURITY_SET_PASSWORD  = 0xf1,
       ATA_OP_SECURITY_UNLOCK        = 0xf2,
       ATA_OP_SECURITY_ERASE_PREPARE = 0xf3,
       ATA_OP_SECURITY_ERASE_UNIT    = 0xf4,
@@ -164,6 +214,28 @@ namespace sg
       SG_CDB2_TDIR_TO_DEV   = 0 << 3,
       SG_CDB2_TDIR_FROM_DEV = 1 << 3,
       SG_CDB2_CHECK_COND    = 1 << 5,
+    };
+
+  enum
+    {
+      SG_IDENTIFIER_USER   = 0,
+      SG_IDENTIFIER_MASTER = 1
+    };
+
+  enum
+    {
+      SG_ERASE_NORMAL   = 0,
+      SG_ERASE_ENHANCED = 1
+    };
+
+  enum
+    {
+      FORM_FACTOR_UNKNOWN = 0x00,
+      FORM_FACTOR_5_25    = 0x01,
+      FORM_FACTOR_3_5     = 0x02,
+      FORM_FACTOR_2_5     = 0x03,
+      FORM_FACTOR_1_8     = 0x04,
+      FORM_FACTOR_LT_1_8  = 0x05
     };
 
   struct ata_lba_regs
@@ -188,11 +260,28 @@ namespace sg
 
   struct identity
   {
-    unsigned int write_uncorrectable_ext:1;
-    unsigned int smart_supported:1;
-    unsigned int smart_enabled:1;
+    uint64_t write_uncorrectable:1;
+    uint64_t smart_supported:1;
+    uint64_t smart_enabled:1;
+    uint64_t security_supported:1;
+    uint64_t security_enabled:1;
+    uint64_t security_locked:1;
+    uint64_t security_frozen:1;
+    uint64_t security_count_expired:1;
+    uint64_t security_enhanced_erase_supported:1;
+    uint64_t block_erase:1;
+    uint64_t overwrite:1;
+    uint64_t crypto_scramble:1;
+    uint64_t sanitize:1;
+    uint64_t supports_sata_gen1:1;
+    uint64_t supports_sata_gen2:1;
+    uint64_t supports_sata_gen3:1;
+    uint64_t trim_supported:1;
 
-    int rpm;
+    uint8_t  form_factor;
+    uint32_t rpm;
+    uint32_t security_normal_erase_time;
+    uint32_t security_enhanced_erase_time;
 
     char serial_number[20+1];
     char firmware_revision[8+1];
@@ -248,6 +337,19 @@ namespace sg
                              const uint64_t lba_,
                              const bool     log_,
                              const int      timeout_);
-}
 
-#endif
+  int
+  security_set_password(const int  fd,
+                        const int  identifier,
+                        const char password[32],
+                        const int  timeout);
+  int
+  security_erase_prepare(const int fd,
+                         const int timeout);
+  int
+  security_erase(const int  fd,
+                 const int  erase_mode,
+                 const int  identifier,
+                 const char password[32],
+                 const int  timeout);
+}

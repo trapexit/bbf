@@ -37,7 +37,7 @@ namespace bbf
     if(rv < 0)
       return AppError::opening_file(-rv,opts.device);
 
-    for(size_t i = 0, ei = blockvector.size(); i != ei; i++)
+    for(uint64_t i = 0, ei = blockvector.size(); i != ei; i++)
       {
         uint64_t        j = blockvector[i].block;
         const uint64_t ej = blockvector[i].length + j;

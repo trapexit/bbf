@@ -33,7 +33,7 @@ static
 int
 fix_loop_core(BlkDev             &blkdev_,
               char               *buf_,
-              const size_t        buflen_,
+              const uint64_t      buflen_,
               const unsigned int  retries_,
               const uint64_t      badblock_)
 {
@@ -81,7 +81,7 @@ fix_loop(BlkDev                      &blkdev,
 {
   int rv;
   char *buf;
-  size_t buflen;
+  uint64_t buflen;
 
   buflen = blkdev.logical_block_size();
   buf    = new char[buflen];

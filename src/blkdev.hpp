@@ -43,25 +43,25 @@ public:
   int close(void);
 
 public:
-  ssize_t os_read(const uint64_t  lba,
+  int64_t os_read(const uint64_t  lba,
                   const uint64_t  blocks,
                   void           *buf,
-                  const size_t    buflen);
+                  const uint64_t  buflen);
 
-  ssize_t os_write(const uint64_t  lba,
+  int64_t os_write(const uint64_t  lba,
                    const uint64_t  blocks,
                    const void     *buf,
-                   const size_t    buflen);
+                   const uint64_t  buflen);
 
-  ssize_t ata_read(const uint64_t  lba,
+  int64_t ata_read(const uint64_t  lba,
                    const uint64_t  blocks,
                    void           *buf,
-                   const size_t    buflen);
+                   const uint64_t  buflen);
 
-  ssize_t ata_write(const uint64_t  lba,
+  int64_t ata_write(const uint64_t  lba,
                     const uint64_t  blocks,
                     const void     *buf,
-                    const size_t    buflen);
+                    const uint64_t  buflen);
 
 private:
   enum RWType
@@ -75,15 +75,15 @@ private:
 public:
   void set_rw_ata(void) { _rw_type = ATA; }
   void set_rw_os(void)  { _rw_type = OS;  }
-  ssize_t read(const uint64_t  lba,
+  int64_t read(const uint64_t  lba,
                const uint64_t  blocks,
                void           *buf,
-               const size_t    buflen);
+               const uint64_t  buflen);
 
-  ssize_t write(const uint64_t  lba,
+  int64_t write(const uint64_t  lba,
                 const uint64_t  blocks,
                 const void     *buf,
-                const size_t    buflen);
+                const uint64_t  buflen);
 
 public:
   int sync(void);
@@ -102,13 +102,7 @@ public:
 
 public:
   const bool  has_identity(void) const { return _has_identity; }
-  const bool  write_uncorrectable_ext(void) const;
-  const bool  smart_supported(void) const;
-  const bool  smart_enabled(void) const;
-  const int   rpm(void) const;
-  const char *serial_number(void) const;
-  const char *firmware_revision(void) const;
-  const char *model_number(void) const;
+  const sg::identity &identity() const { return _identity; }
 
 public:
   int fd(void) const { return _fd; }
