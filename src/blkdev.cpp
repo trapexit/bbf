@@ -155,96 +155,116 @@ BlkDev::close(void)
 }
 
 ssize_t
-BlkDev::os_read(const uint64_t  lba,
-                void           *buf,
-                const size_t    buflen)
+BlkDev::os_read(const uint64_t  lba_,
+                const uint64_t  blocks_,
+                void           *buf_,
+                const size_t    buflen_)
 {
   ssize_t rv;
+  size_t len;
   off_t offset;
 
-  offset = (lba * _logical_block_size);
+  len    = ((buflen_ * _logical_block_size) / _logical_block_size);
+  len    = std::min((blocks_ * _logical_block_size),len);
+  offset = (lba_ * _logical_block_size);
 
-  rv = ::pread(_fd,buf,buflen,offset);
+  rv = ::pread(_fd,buf_,len,offset);
+  if(rv == -1)
+    return -errno;
 
-  return ((rv == -1) ? -errno : rv);
+  return (rv / _logical_block_size);
 }
 
 ssize_t
-BlkDev::os_write(const uint64_t  lba,
-                 const void     *buf,
-                 const size_t    buflen)
+BlkDev::os_write(const uint64_t  lba_,
+                 const uint64_t  blocks_,
+                 const void     *buf_,
+                 const uint64_t  buflen_)
 {
   ssize_t rv;
+  size_t len;
   off_t offset;
 
-  offset = (lba * _logical_block_size);
+  len    = ((buflen_ * _logical_block_size) / _logical_block_size);
+  len    = std::min((blocks_ * _logical_block_size),len);
+  offset = (lba_ * _logical_block_size);
 
-  rv = ::pwrite(_fd,buf,buflen,offset);
+  rv = ::pwrite(_fd,buf_,len,offset);
+  if(rv == -1)
+    return -errno;
 
-  return ((rv == -1) ? -errno : rv);
+  return (rv / _logical_block_size);
 }
 
 ssize_t
-BlkDev::ata_read(const uint64_t  lba,
-                 void           *buf,
-                 const size_t    buflen)
+BlkDev::ata_read(const uint64_t  lba_,
+                 const uint64_t  blocks_,
+                 void           *buf_,
+                 const size_t    buflen_)
 {
   int rv;
 
-  rv = sg::read_block(_fd,lba,
-                      _logical_block_size,
-                      buf,buflen,
+  rv = sg::read_block(_fd,
+                      lba_,
+                      blocks_,
+                      buf_,
+                      buflen_,
                       _timeout);
   if(rv < 0)
     return rv;
 
-  return buflen;
+  return blocks_;
 }
 
 ssize_t
-BlkDev::ata_write(const uint64_t  lba,
-                  const void     *buf,
-                  const size_t    buflen)
+BlkDev::ata_write(const uint64_t  lba_,
+                  const uint64_t  blocks_,
+                  const void     *buf_,
+                  const size_t    buflen_)
 {
   int rv;
 
-  rv = sg::write_block(_fd,lba,
-                       _logical_block_size,
-                       buf,buflen,
+  rv = sg::write_block(_fd,
+                       lba_,
+                       blocks_,
+                       buf_,
+                       buflen_,
                        _timeout);
   if(rv < 0)
     return rv;
 
-  return buflen;
+  return blocks_;
 }
 
 ssize_t
-BlkDev::read(const uint64_t  lba,
-             void           *buf,
-             const size_t    buflen)
+BlkDev::read(const uint64_t  lba_,
+             const uint64_t  blocks_,
+             void           *buf_,
+             const size_t    buflen_)
 {
   switch(_rw_type)
     {
     case ATA:
-      return ata_read(lba,buf,buflen);
+      return ata_read(lba_,blocks_,buf_,buflen_);
     case OS:
-      return os_read(lba,buf,buflen);
+      return os_read(lba_,blocks_,buf_,buflen_);
     }
 
   return -ENOTSUP;
 }
 
 ssize_t
-BlkDev::write(const uint64_t  lba,
-              const void     *buf,
-              const size_t    buflen)
+BlkDev::write(const uint64_t  lba_,
+              const uint64_t  blocks_,
+              const void     *buf_,
+              const size_t    buflen_)
 {
   switch(_rw_type)
     {
     case ATA:
-      return ata_write(lba,buf,buflen);
+      return ata_write(lba_,blocks_,buf_,buflen_);
     case OS:
-      return os_write(lba,buf,buflen);
+      return os_write(lba_,blocks_,buf_,buflen_);
     }
 
   return -ENOTSUP;

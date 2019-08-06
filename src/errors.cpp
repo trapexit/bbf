@@ -60,6 +60,8 @@ type_to_string(const int type)
       return "unable to open file";
     case AppError::CAPTCHA:
       return "captcha doesn't match";
+    case AppError::RUNTIME:
+      return "runtime";
     default:
       return ":unknown:";
     }
@@ -162,4 +164,12 @@ AppError::captcha(const std::string &_captcha0,
                   const std::string &_captcha1)
 {
   return AppError(CAPTCHA,EINVAL,_captcha0 + " != " + _captcha1);
+}
+
+const
+AppError
+AppError::runtime(const int          error_,
+                  const std::string &extra_)
+{
+  return AppError(RUNTIME,error_,extra_);
 }

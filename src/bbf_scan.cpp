@@ -34,46 +34,30 @@
 
 static
 uint64_t
-trim_stepping(const BlkDev  &blkdev_,
-             const uint64_t  block_,
-             const uint64_t  stepping_)
+trim_stepping(const BlkDev   &blkdev_,
+              const uint64_t  block_,
+              const uint64_t  stepping_)
 {
-  uint64_t size;
-  uint64_t stepping;
+  uint64_t block_count;
 
-  if(block_ >= blkdev_.logical_block_count())
+  block_count = blkdev_.logical_block_count();
+
+  if(block_ > block_count)
     return 0;
 
-  stepping = stepping_;
-  size = (blkdev_.logical_block_size() * (block_ + stepping));
-  while(size > blkdev_.size_in_bytes())
-    {
-      stepping--;
-      size = (blkdev_.logical_block_size() * (block_ + stepping));
-    }
-
-  return stepping;
-}
-
-static
-int
-is_badblock(BlkDev         &blkdev,
-            const uint64_t  block,
-            const uint64_t  stepping)
-{
-  uint64_t size = (stepping * blkdev.logical_block_size());
-  char buf[size];
-
-  return blkdev.read(block,buf,size);
+  return std::min(block_count - block_,stepping_);
 }
 
 static
 int
 scan_loop(BlkDev                &blkdev,
+          const uint64_t         stepping_,
           const uint64_t         start_block,
           const uint64_t         end_block,
-          const uint64_t         stepping_,
-          std::vector<uint64_t> &badblocks)
+          char                  *buf_,
+          const size_t           buflen_,
+          std::vector<uint64_t> &badblocks,
+          const uint64_t         max_errors_)
 {
   int rv;
   uint64_t block;
@@ -101,33 +85,47 @@ scan_loop(BlkDev                &blkdev,
 
       stepping = trim_stepping(blkdev,block,stepping_);
 
-      rv = is_badblock(blkdev,block,stepping);
+      rv = blkdev.read(block,stepping,buf_,buflen_);
       block += stepping;
       if(rv > 0)
         continue;
       if(rv == 0)
         break;
+      if(rv > -256)
+        break;
 
       current_time = Time::get_monotonic();
       Info::print(std::cout,start_time,current_time,
                   start_block,end_block,block,badblocks);
+
       for(uint64_t i = 0; i < stepping; i++)
-        badblocks.push_back(block+i);
+        {
+          rv = blkdev.read(block+i,1,buf_,buflen_);
+          if(rv > 0)
+            continue;
+          badblocks.push_back(block+i);
+        }
+
+      if(badblocks.size() > max_errors_)
+        break;
     }
 
   current_time = Time::get_monotonic();
   Info::print(std::cout,start_time,current_time,
               start_block,end_block,block,badblocks);
 
-  return 0;
+  return rv;
 }
 
 static
-int
+AppError
 scan(BlkDev                &blkdev,
      const Options         &opts,
      std::vector<uint64_t> &badblocks)
 {
+  int rv;
+  char *buf;
+  size_t buflen;
   uint64_t start_block;
   uint64_t end_block;
   uint64_t stepping;
@@ -135,6 +133,7 @@ scan(BlkDev                &blkdev,
   stepping    = ((opts.stepping == 0) ?
                  blkdev.block_stepping() :
                  opts.stepping);
+  buflen      = (stepping * blkdev.logical_block_size());
   start_block = math::round_down(opts.start_block,stepping);
   end_block   = std::min(opts.end_block,blkdev.logical_block_count());
   end_block   = math::round_up(end_block,stepping);
@@ -151,7 +150,8 @@ scan(BlkDev                &blkdev,
             << "physical block size: "
             << blkdev.physical_block_size() << std::endl
             << "read size: "
-            << stepping * blkdev.logical_block_size()
+            << stepping << " blocks / "
+            << stepping * blkdev.logical_block_size() << " bytes"
             << std::endl;
 
   signals::alarm(1);
@@ -161,10 +161,24 @@ scan(BlkDev                &blkdev,
             << " - "
             << end_block
             << std::endl;
-  scan_loop(blkdev,start_block,end_block,stepping,badblocks);
+
+  buf = new char[buflen];
+  rv = scan_loop(blkdev,
+                 stepping,
+                 start_block,
+                 end_block,
+                 buf,
+                 buflen,
+                 badblocks,
+                 opts.max_errors);
+  delete[] buf;
+
   std::cout << std::endl;
 
-  return 0;
+  if(rv < 0)
+    return AppError::runtime(-rv,"error when scanning drive");
+
+  return AppError::success();
 }
 
 static
@@ -188,6 +202,7 @@ AppError
 scan(const Options &opts)
 {
   int rv;
+  AppError err;
   BlkDev blkdev;
   std::string input_file;
   std::string output_file;
@@ -212,18 +227,19 @@ scan(const Options &opts)
 
   set_blkdev_rwtype(blkdev,opts.rwtype);
 
-  scan(blkdev,opts,badblocks);
+  err = scan(blkdev,opts,badblocks);
 
   rv = BadBlockFile::write(output_file,badblocks);
-  if(rv < 0)
-    return AppError::writing_badblocks_file(-rv,output_file);
-  std::cout << "Bad blocks written to " << output_file << std::endl;
+  if((rv < 0) && err.succeeded())
+    err = AppError::writing_badblocks_file(-rv,output_file);
+  else if(!badblocks.empty())
+    std::cout << "Bad blocks written to " << output_file << std::endl;
 
   rv = blkdev.close();
-  if(rv < 0)
-    return AppError::closing_device(-rv,opts.device);
+  if((rv < 0) && err.succeeded())
+    err = AppError::closing_device(-rv,opts.device);
 
-  return AppError::success();
+  return err;
 }
 
 namespace bbf

@@ -31,23 +31,23 @@
 
 static
 int
-fix_loop_core(BlkDev             &blkdev,
-              const uint64_t      logical_block_size,
-              const unsigned int  retries,
-              const uint64_t      badblock)
+fix_loop_core(BlkDev             &blkdev_,
+              char               *buf_,
+              const size_t        buflen_,
+              const unsigned int  retries_,
+              const uint64_t      badblock_)
 {
   int rv;
   uint64_t attempts;
-  char buf[logical_block_size];
 
   if(signals::signaled_to_exit())
     return -EINTR;
 
-  std::cout << "Reading block " << badblock << ' ' << std::flush;
+  std::cout << "Reading block " << badblock_ << ' ' << std::flush;
 
   rv = -1;
-  for(attempts = 0; ((attempts <= retries) && (rv < 0)); attempts++)
-    rv = blkdev.read(badblock,buf,logical_block_size);
+  for(attempts = 0; ((attempts <= retries_) && (rv < 0)); attempts++)
+    rv = blkdev_.read(badblock_,1,buf_,buflen_);
 
   if(rv < 0)
     std::cout << "failed [" << Error::to_string(-rv) << "] - using zeros";
@@ -56,13 +56,13 @@ fix_loop_core(BlkDev             &blkdev,
   std::cout << " (" << attempts << " attempts)" << std::endl;
 
   if(rv < 0)
-    memset(buf,0,logical_block_size);
+    memset(buf_,0,buflen_);
 
-  std::cout << "Writing block " << badblock << ' ' << std::flush;
+  std::cout << "Writing block " << badblock_ << ' ' << std::flush;
 
   rv = -1;
-  for(attempts = 0; ((attempts <= retries) && (rv < 0)); attempts++)
-    rv = blkdev.write(badblock,buf,logical_block_size);
+  for(attempts = 0; ((attempts <= retries_) && (rv < 0)); attempts++)
+    rv = blkdev_.write(badblock_,1,buf_,buflen_);
 
   if(rv < 0)
     std::cout << "failed [" << Error::to_string(-rv) << "]";
@@ -80,14 +80,20 @@ fix_loop(BlkDev                      &blkdev,
          const unsigned int           retries)
 {
   int rv;
-  const uint64_t logical_block_size = blkdev.logical_block_size();
+  char *buf;
+  size_t buflen;
+
+  buflen = blkdev.logical_block_size();
+  buf    = new char[buflen];
 
   for(uint64_t i = 0, ei = badblocks.size(); i != ei; ++i)
     {
-      rv = fix_loop_core(blkdev,logical_block_size,retries,badblocks[i]);
+      rv = fix_loop_core(blkdev,buf,buflen,retries,badblocks[i]);
       if(rv < 0)
         break;
     }
+
+  delete[] buf;
 
   return rv;
 }

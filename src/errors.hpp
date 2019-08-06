@@ -31,16 +31,17 @@ class AppError
 public:
   enum Type
     {
-      SUCCESS                = 0,
-      ARGUMENT_REQUIRED      = 1,
-      ARGUMENT_INVALID       = 2,
-      OPENING_DEVICE         = 3,
-      CLOSING_DEVICE         = 4,
-      IDENTIFYING_DEVICE     = 5,
-      READING_BADBLOCKS_FILE = 6,
-      WRITING_BADBLOCKS_FILE = 7,
-      OPENING_FILE           = 8,
-      CAPTCHA                = 9,
+      SUCCESS                = 0x00,
+      ARGUMENT_REQUIRED      = 0x01,
+      ARGUMENT_INVALID       = 0x02,
+      OPENING_DEVICE         = 0x03,
+      CLOSING_DEVICE         = 0x04,
+      IDENTIFYING_DEVICE     = 0x05,
+      READING_BADBLOCKS_FILE = 0x06,
+      WRITING_BADBLOCKS_FILE = 0x07,
+      OPENING_FILE           = 0x08,
+      CAPTCHA                = 0x09,
+      RUNTIME                = 0x0A,
       _END
     };
 
@@ -72,6 +73,7 @@ public:
   static const AppError writing_badblocks_file(const int, const std::string&);
   static const AppError opening_file(const int, const std::string&);
   static const AppError captcha(const std::string&,const std::string&);
+  static const AppError runtime(const int,const std::string&);
 
 public:
   bool succeeded(void) const;

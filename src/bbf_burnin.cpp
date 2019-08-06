@@ -34,53 +34,47 @@
 
 static
 uint64_t
-trim_stepping(const BlkDev  &blkdev_,
-             const uint64_t  block_,
-             const uint64_t  stepping_)
+trim_stepping(const BlkDev   &blkdev_,
+              const uint64_t  block_,
+              const uint64_t  stepping_)
 {
-  uint64_t size;
-  uint64_t stepping;
+  uint64_t block_count;
 
-  if(block_ >= blkdev_.logical_block_count())
+  block_count = blkdev_.logical_block_count();
+
+  if(block_ > block_count)
     return 0;
 
-  stepping = stepping_;
-  size = (blkdev_.logical_block_size() * (block_ + stepping));
-  while(size > blkdev_.size_in_bytes())
-    {
-      stepping--;
-      size = (blkdev_.logical_block_size() * (block_ + stepping));
-    }
-
-  return stepping;
+  return std::min(block_count - block_,stepping_);
 }
 
 static
 int
 write_read_compare(BlkDev         &blkdev,
+                   const uint64_t  stepping_,
                    const uint64_t  block,
-                   const uint64_t  buffer_size,
+                   char           *buf_,
+                   const size_t    buflen_,
                    const int       retries,
                    const char     *write_buf)
 {
   int rv;
-  char read_buf[buffer_size];
 
   rv = -1;
   for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
-    rv = blkdev.write(block,write_buf,buffer_size);
+    rv = blkdev.write(block,stepping_,write_buf,buflen_);
 
   if(rv < 0)
     return rv;
 
   rv = -1;
   for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
-    rv = blkdev.read(block,read_buf,buffer_size);
+    rv = blkdev.read(block,stepping_,buf_,buflen_);
 
   if(rv < 0)
     return rv;
 
-  rv = ::memcmp(write_buf,read_buf,buffer_size);
+  rv = ::memcmp(write_buf,buf_,buflen_);
   if(rv != 0)
     return -EIO;
 
@@ -89,26 +83,31 @@ write_read_compare(BlkDev         &blkdev,
 
 static
 int
-burn_block(BlkDev                         &blkdev,
-           const uint64_t                  block,
-           const uint64_t                  buffer_size,
-           const uint64_t                  retries,
-           const std::vector<const char*> &patterns)
+burn_block(BlkDev         &blkdev,
+           const uint64_t  stepping_,
+           const uint64_t  block,
+           char           *buf_,
+           const size_t    buflen_,
+           const uint64_t  retries,
+           const std::vector<std::vector<char> > &patterns_)
 {
   int rv;
-  char orig_buf[buffer_size];
 
   rv = -1;
   for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
-    rv = blkdev.read(block,orig_buf,buffer_size);
+    rv = blkdev.read(block,stepping_,buf_,buflen_);
 
   if(rv < 0)
-    ::memset(orig_buf,0,buffer_size);
+    ::memset(buf_,0,buflen_);
 
-  for(uint64_t i = 0, ei = patterns.size(); i != ei; i++)
-    rv = write_read_compare(blkdev,block,buffer_size,retries,patterns[i]);
+  for(uint64_t i = 0; i < patterns_.size(); i++)
+    rv = write_read_compare(blkdev,stepping_,block,buf_,buflen_,retries,&patterns_[i][0]);
 
-  return write_read_compare(blkdev,block,buffer_size,retries,orig_buf);
+  rv = -1;
+  for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
+    rv = blkdev.write(block,stepping_,buf_,buflen_);
+
+  return rv;
 }
 
 static
@@ -117,25 +116,24 @@ burnin_loop(BlkDev                &blkdev,
             const uint64_t         start_block,
             const uint64_t         end_block,
             const uint64_t         stepping_,
-            const uint64_t         buffer_size,
+            char                  *buf_,
+            const size_t           buflen_,
             std::vector<uint64_t> &badblocks,
+            const uint64_t         max_errors_,
             const int              retries)
 {
   int rv;
   uint64_t block;
   uint64_t stepping;
   double current_time;
-  std::vector<const char*> patterns;
-  const std::vector<char> buf_0x00(buffer_size,0x00);
-  const std::vector<char> buf_0x55(buffer_size,0x55);
-  const std::vector<char> buf_0xAA(buffer_size,0xAA);
-  const std::vector<char> buf_0xFF(buffer_size,0xFF);
+  std::vector<std::vector<char> > patterns;
   const double start_time = Time::get_monotonic();
 
-  patterns.push_back(&buf_0x00[0]);
-  patterns.push_back(&buf_0x55[0]);
-  patterns.push_back(&buf_0xAA[0]);
-  patterns.push_back(&buf_0xFF[0]);
+  patterns.resize(4);
+  patterns[0].resize(buflen_,0x00);
+  patterns[1].resize(buflen_,0x55);
+  patterns[2].resize(buflen_,0xAA);
+  patterns[3].resize(buflen_,0xFF);
 
   current_time = Time::get_monotonic();
   Info::print(std::cout,start_time,current_time,
@@ -157,10 +155,12 @@ burnin_loop(BlkDev                &blkdev,
 
       stepping = trim_stepping(blkdev,block,stepping_);
 
-      rv = burn_block(blkdev,block,buffer_size,retries,patterns);
+      rv = burn_block(blkdev,stepping_,block,buf_,buflen_,retries,patterns);
       block += stepping;
       if(rv >= 0)
         continue;
+      if(rv == -EINVAL)
+        break;
 
       current_time = Time::get_monotonic();
       Info::print(std::cout,start_time,current_time,
@@ -168,32 +168,37 @@ burnin_loop(BlkDev                &blkdev,
 
       for(uint64_t i = 0; i < stepping; i++)
         badblocks.push_back(block+i);
+
+      if(badblocks.size() > max_errors_)
+        break;
     }
 
   current_time = Time::get_monotonic();
   Info::print(std::cout,start_time,current_time,
               start_block,end_block,block,badblocks);
 
-  return 0;
+  return rv;
 }
 
 static
-int
+AppError
 burnin(BlkDev                &blkdev,
        const Options         &opts,
        std::vector<uint64_t> &badblocks)
 {
-  int      retries;
-  uint64_t buffer_size;
-  uint64_t start_block;
-  uint64_t end_block;
-  uint64_t stepping;
+  int       rv;
+  int       retries;
+  char     *buf;
+  size_t    buflen;
+  uint64_t  start_block;
+  uint64_t  end_block;
+  uint64_t  stepping;
 
   retries     = opts.retries;
   stepping    = ((opts.stepping == 0) ?
                  blkdev.block_stepping() :
                  opts.stepping);
-  buffer_size = (stepping * blkdev.logical_block_size());
+  buflen      = (stepping * blkdev.logical_block_size());
   start_block = math::round_down(opts.start_block,stepping);
   end_block   = std::min(opts.end_block,blkdev.logical_block_count());
   end_block   = math::round_up(end_block,stepping);
@@ -210,7 +215,8 @@ burnin(BlkDev                &blkdev,
             << "physical block size: "
             << blkdev.physical_block_size() << std::endl
             << "r/w size: "
-            << stepping * blkdev.logical_block_size()
+            << stepping << " blocks / "
+            << buflen << " bytes"
             << std::endl;
 
   signals::alarm(1);
@@ -220,10 +226,25 @@ burnin(BlkDev                &blkdev,
             << " - "
             << end_block
             << std::endl;
-  burnin_loop(blkdev,start_block,end_block,stepping,buffer_size,badblocks,retries);
+
+  buf = new char[buflen];
+  rv = burnin_loop(blkdev,
+                   start_block,
+                   end_block,
+                   stepping,
+                   buf,
+                   buflen,
+                   badblocks,
+                   opts.max_errors,
+                   retries);
+  delete[] buf;
+
   std::cout << std::endl;
 
-  return 0;
+  if(rv < 0)
+    return AppError::runtime(-rv,"error when performing burnin");
+
+  return AppError::success();
 }
 
 static
@@ -247,6 +268,7 @@ AppError
 burnin(const Options &opts)
 {
   int rv;
+  AppError err;
   BlkDev blkdev;
   std::string captcha;
   std::string input_file;
@@ -278,18 +300,19 @@ burnin(const Options &opts)
 
   set_blkdev_rwtype(blkdev,opts.rwtype);
 
-  burnin(blkdev,opts,badblocks);
+  err = burnin(blkdev,opts,badblocks);
 
   rv = BadBlockFile::write(output_file,badblocks);
-  if(rv < 0)
-    return AppError::writing_badblocks_file(-rv,output_file);
-  std::cout << "Bad blocks written to " << output_file << std::endl;
+  if((rv < 0) && err.succeeded())
+    err = AppError::writing_badblocks_file(-rv,output_file);
+  else if(!badblocks.empty())
+    std::cout << "Bad blocks written to " << output_file << std::endl;
 
   rv = blkdev.close();
-  if(rv < 0)
-    return AppError::closing_device(-rv,opts.device);
+  if((rv < 0) && err.succeeded())
+    err = AppError::closing_device(-rv,opts.device);
 
-  return AppError::success();
+  return err;
 }
 
 namespace bbf

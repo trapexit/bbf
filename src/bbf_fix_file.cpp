@@ -32,56 +32,56 @@
 
 static
 int
-fix_file_loop_core(BlkDev             &blkdev,
-                   const uint64_t      logical_block_size,
-                   const unsigned int  retries,
-                   const uint64_t      badblock)
+fix_file_loop_core(BlkDev             &blkdev_,
+                   char               *buf_,
+                   const size_t        buflen_,
+                   const unsigned int  retries_,
+                   const uint64_t      badblock_)
 {
   int rv;
   uint64_t attempts;
-  char buf[logical_block_size];
 
   if(signals::signaled_to_exit())
     return -EINTR;
 
-  rv = blkdev.read(badblock,buf,logical_block_size);
-  for(attempts = 1; ((attempts <= retries) && (rv < 0)); attempts++)
+  rv = blkdev_.read(badblock_,1,buf_,buflen_);
+  for(attempts = 1; ((attempts <= retries_) && (rv < 0)); attempts++)
     {
       std::cout << "Reading block "
-                << badblock
+                << badblock_
                 << " failed (attempt "
-                << attempts << " of " << retries
+                << attempts << " of " << retries_
                 << "[" << Error::to_string(-rv) << "]: trying again"
                 << std::endl;
-      rv = blkdev.read(badblock,buf,logical_block_size);
+      rv = blkdev_.read(badblock_,1,buf_,buflen_);
     }
 
   if(rv < 0)
     {
       std::cout << "Reading block "
-                << badblock
+                << badblock_
                 << " failed ("
                 << attempts << " attempts) "
                 << "[" << Error::to_string(-rv) << "]: using zeros"
                 << std::endl;
-      memset(buf,0,logical_block_size);
+      ::memset(buf_,0,buflen_);
     }
 
-  rv = blkdev.write(badblock,buf,logical_block_size);
-  for(attempts = 1; ((attempts <= retries) && (rv < 0)); attempts++)
+  rv = blkdev_.write(badblock_,1,buf_,buflen_);
+  for(attempts = 1; ((attempts <= retries_) && (rv < 0)); attempts++)
     {
       std::cout << "Writing block "
-                << badblock
+                << badblock_
                 << " failed (attempt "
-                << attempts << " of " << retries
+                << attempts << " of " << retries_
                 << "[" << Error::to_string(-rv) << "]: trying again"
                 << std::endl;
-      rv = blkdev.write(badblock,buf,logical_block_size);
+      rv = blkdev_.write(badblock_,1,buf_,buflen_);
     }
 
   if(rv < 0)
     std::cout << "Writing block "
-              << badblock
+              << badblock_
               << " failed ("
               << attempts << " attempts) "
               << "[" << Error::to_string(-rv) << "]"
@@ -93,25 +93,31 @@ fix_file_loop_core(BlkDev             &blkdev,
 
 static
 int
-fix_file_loop(BlkDev                  &blkdev,
-              const File::BlockVector &blockvector,
-              const unsigned int       retries)
+fix_file_loop(BlkDev                  &blkdev_,
+              const File::BlockVector &blockvector_,
+              const unsigned int       retries_)
 {
   int rv;
-  const uint64_t logical_block_size = blkdev.logical_block_size();
+  char *buf;
+  size_t buflen;
 
-  for(size_t i = 0, ei = blockvector.size(); i != ei; i++)
+  buflen = blkdev_.logical_block_size();
+  buf = new char[buflen];
+
+  for(size_t i = 0, ei = blockvector_.size(); i != ei; i++)
     {
-      uint64_t        j = blockvector[i].block;
-      const uint64_t ej = blockvector[i].length + j;
+      uint64_t        j = blockvector_[i].block;
+      const uint64_t ej = blockvector_[i].length + j;
 
       for(; j != ej; j++)
         {
-          rv = fix_file_loop_core(blkdev,logical_block_size,retries,j);
+          rv = fix_file_loop_core(blkdev_,buf,buflen,retries_,j);
           if(rv < 0)
             break;
         }
     }
+
+  delete[] buf;
 
   return rv;
 }
