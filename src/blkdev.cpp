@@ -16,6 +16,11 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "blkdev.hpp"
+#include "ioctl.hpp"
+
+#include <string>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
@@ -23,28 +28,26 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <string>
-
-#include "blkdev.hpp"
-#include "ioctl.hpp"
-
 #define SECONDS(x) ((x) * 1000)
 
-static
-int
-_block_device(const int fd)
+namespace l
 {
-  int rv;
-  struct stat st;
+  static
+  int
+  block_device(const int fd_)
+  {
+    int rv;
+    struct stat st;
 
-  rv = ::fstat(fd,&st);
-  if(rv == -1)
-    return -errno;
+    rv = ::fstat(fd_,&st);
+    if(rv == -1)
+      return -errno;
 
-  if(!S_ISBLK(st.st_mode))
-    return -ENOTBLK;
+    if(!S_ISBLK(st.st_mode))
+      return -ENOTBLK;
 
-  return 0;
+    return 0;
+  }
 }
 
 void
@@ -101,7 +104,7 @@ BlkDev::open(const std::string &path,
   if(_fd == -1)
     return -errno;
 
-  rv = _block_device(_fd);
+  rv = l::block_device(_fd);
   if(rv < 0)
     goto error;
 
@@ -154,14 +157,14 @@ BlkDev::close(void)
   return ((rv == -1) ? -errno : rv);
 }
 
-ssize_t
+int64_t
 BlkDev::os_read(const uint64_t  lba_,
                 const uint64_t  blocks_,
                 void           *buf_,
-                const size_t    buflen_)
+                const uint64_t  buflen_)
 {
-  ssize_t rv;
-  size_t len;
+  int64_t rv;
+  uint64_t len;
   off_t offset;
 
   len    = ((buflen_ * _logical_block_size) / _logical_block_size);
@@ -175,14 +178,14 @@ BlkDev::os_read(const uint64_t  lba_,
   return (rv / _logical_block_size);
 }
 
-ssize_t
+int64_t
 BlkDev::os_write(const uint64_t  lba_,
                  const uint64_t  blocks_,
                  const void     *buf_,
                  const uint64_t  buflen_)
 {
-  ssize_t rv;
-  size_t len;
+  int64_t rv;
+  uint64_t len;
   off_t offset;
 
   len    = ((buflen_ * _logical_block_size) / _logical_block_size);
@@ -196,11 +199,11 @@ BlkDev::os_write(const uint64_t  lba_,
   return (rv / _logical_block_size);
 }
 
-ssize_t
+int64_t
 BlkDev::ata_read(const uint64_t  lba_,
                  const uint64_t  blocks_,
                  void           *buf_,
-                 const size_t    buflen_)
+                 const uint64_t  buflen_)
 {
   int rv;
 
@@ -216,11 +219,11 @@ BlkDev::ata_read(const uint64_t  lba_,
   return blocks_;
 }
 
-ssize_t
+int64_t
 BlkDev::ata_write(const uint64_t  lba_,
                   const uint64_t  blocks_,
                   const void     *buf_,
-                  const size_t    buflen_)
+                  const uint64_t  buflen_)
 {
   int rv;
 
@@ -236,11 +239,11 @@ BlkDev::ata_write(const uint64_t  lba_,
   return blocks_;
 }
 
-ssize_t
+int64_t
 BlkDev::read(const uint64_t  lba_,
              const uint64_t  blocks_,
              void           *buf_,
-             const size_t    buflen_)
+             const uint64_t  buflen_)
 {
   switch(_rw_type)
     {
@@ -253,11 +256,11 @@ BlkDev::read(const uint64_t  lba_,
   return -ENOTSUP;
 }
 
-ssize_t
+int64_t
 BlkDev::write(const uint64_t  lba_,
               const uint64_t  blocks_,
               const void     *buf_,
-              const size_t    buflen_)
+              const uint64_t  buflen_)
 {
   switch(_rw_type)
     {
@@ -311,53 +314,4 @@ BlkDev::write_pseudo_uncorrectable(const uint64_t lba_,
                                    const bool     log_)
 {
   return sg::write_pseudo_uncorrectable(_fd,lba_,log_,_timeout);
-}
-
-const
-int
-BlkDev::rpm(void) const
-{
-  return _identity.rpm;
-}
-
-const
-bool
-BlkDev::write_uncorrectable_ext(void) const
-{
-  return _identity.write_uncorrectable_ext;
-}
-
-const
-bool
-BlkDev::smart_supported(void) const
-{
-  return _identity.smart_supported;
-}
-
-const
-bool
-BlkDev::smart_enabled(void) const
-{
-  return _identity.smart_enabled;
-}
-
-const
-char *
-BlkDev::serial_number(void) const
-{
-  return _identity.serial_number;
-}
-
-const
-char *
-BlkDev::firmware_revision(void) const
-{
-  return _identity.firmware_revision;
-}
-
-const
-char *
-BlkDev::model_number(void) const
-{
-  return _identity.model_number;
 }

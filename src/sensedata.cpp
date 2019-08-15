@@ -19,6 +19,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+/*
+  https://www.tldp.org/HOWTO/archived/SCSI-Programming-HOWTO/SCSI-Programming-HOWTO-10.html
+*/
+
 namespace SenseData
 {
   namespace Offset
@@ -42,29 +46,6 @@ namespace SenseData
         DESCRIPTOR_CURRENT  = 0x72,
         DESCRIPTOR_DEFERRED = 0x73,
         VENDOR_SPECIFIC     = 0x7F
-      };
-  }
-
-  namespace SenseKey
-  {
-    enum SenseKey
-      {
-        NO_SENSE        = 0x00,
-        RECOVERED_ERROR = 0x01,
-        NOT_READY       = 0x02,
-        MEDIUM_ERROR    = 0x03,
-        HARDWARE_ERROR  = 0x04,
-        ILLEGAL_REQUEST = 0x05,
-        UNIT_ATTENTION  = 0x06,
-        DATA_PROTECT    = 0x07,
-        BLANK_CHECK     = 0x08,
-        VENDOR_SPECIFIC = 0x09,
-        COPY_ABORTED    = 0x0A,
-        ABORTED_COMMAND = 0x0B,
-        OBSOLETE        = 0x0C,
-        VOLUME_OVERFLOW = 0x0D,
-        MISCOMPARE      = 0x0E,
-        COMPLETED       = 0x0F
       };
   }
 
@@ -144,7 +125,7 @@ namespace SenseData
       case 0x001C0000:
         return "001c Verify Operation In Progress";
       case 0x001D0000:
-        return "001d Ata Pass Through Information Available";
+        return "001d ATA Pass Through Information Available";
       case 0x001E0000:
         return "001e Conflicting Sa Creation Request";
       case 0x001F0000:

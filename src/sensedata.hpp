@@ -23,6 +23,29 @@
 
 namespace SenseData
 {
+  namespace SenseKey
+  {
+    enum SenseKey
+      {
+        NO_SENSE        = 0x00,
+        RECOVERED_ERROR = 0x01,
+        NOT_READY       = 0x02,
+        MEDIUM_ERROR    = 0x03,
+        HARDWARE_ERROR  = 0x04,
+        ILLEGAL_REQUEST = 0x05,
+        UNIT_ATTENTION  = 0x06,
+        DATA_PROTECT    = 0x07,
+        BLANK_CHECK     = 0x08,
+        VENDOR_SPECIFIC = 0x09,
+        COPY_ABORTED    = 0x0A,
+        ABORTED_COMMAND = 0x0B,
+        OBSOLETE        = 0x0C,
+        VOLUME_OVERFLOW = 0x0D,
+        MISCOMPARE      = 0x0E,
+        COMPLETED       = 0x0F
+      };
+  }
+
   uint8_t response_code(const uint8_t * const sb);
   uint8_t sense_key(const uint8_t * const sb);
   uint8_t additional_sense_code(const uint8_t * const sb);

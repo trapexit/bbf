@@ -55,7 +55,7 @@ scan_loop(BlkDev                &blkdev,
           const uint64_t         start_block,
           const uint64_t         end_block,
           char                  *buf_,
-          const size_t           buflen_,
+          const uint64_t         buflen_,
           std::vector<uint64_t> &badblocks,
           const uint64_t         max_errors_)
 {
@@ -125,7 +125,7 @@ scan(BlkDev                &blkdev,
 {
   int rv;
   char *buf;
-  size_t buflen;
+  uint64_t buflen;
   uint64_t start_block;
   uint64_t end_block;
   uint64_t stepping;

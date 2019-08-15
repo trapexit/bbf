@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2016, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2019, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -18,12 +18,14 @@
 
 #pragma once
 
-#include <string>
+class AppError;
+class Options;
 
-class BlkDev;
-
-namespace captcha
+namespace bbf
 {
-  std::string
-  calculate(const BlkDev &blkdev);
+  AppError
+  security_erase(const Options &opts);
+
+  AppError
+  enhanced_security_erase(const Options &opts);
 }

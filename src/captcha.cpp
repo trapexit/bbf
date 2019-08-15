@@ -16,10 +16,10 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "blkdev.hpp"
+
 #include <string>
 #include <sstream>
-
-#include "blkdev.hpp"
 
 namespace captcha
 {
@@ -29,7 +29,7 @@ namespace captcha
     std::stringstream ss;
 
     if(blkdev.has_identity())
-      ss << blkdev.serial_number();
+      ss << blkdev.identity().serial_number;
     else
       ss << blkdev.size_in_bytes();
 

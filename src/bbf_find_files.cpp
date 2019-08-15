@@ -16,15 +16,15 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <stdint.h>
-
-#include <iostream>
-#include <utility>
-
 #include "badblockfile.hpp"
 #include "blocktofilemapper.hpp"
 #include "errors.hpp"
 #include "options.hpp"
+
+#include <iostream>
+#include <utility>
+
+#include <stdint.h>
 
 namespace bbf
 {
@@ -42,7 +42,7 @@ namespace bbf
     b2fm.scan(opts.device);
 
     const std::string none = "[none]";
-    for(size_t i = 0, ei = badblocks.size(); i != ei; i++)
+    for(uint64_t i = 0, ei = badblocks.size(); i != ei; i++)
       {
         std::pair<bool,std::string> entry;
         const uint64_t badblock = badblocks[i];

@@ -16,9 +16,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <iostream>
-#include <utility>
-
 #include "bbf_burnin.hpp"
 #include "bbf_captcha.hpp"
 #include "bbf_dump_files.hpp"
@@ -28,11 +25,15 @@
 #include "bbf_fix_file.hpp"
 #include "bbf_info.hpp"
 #include "bbf_scan.hpp"
+#include "bbf_security_erase.hpp"
 #include "bbf_write_uncorrectable.hpp"
 
 #include "errors.hpp"
 #include "options.hpp"
 #include "signals.hpp"
+
+#include <iostream>
+#include <utility>
 
 static
 AppError
@@ -66,7 +67,10 @@ process_instruction(const Options &opts)
       return bbf::burnin(opts);
     case Options::CAPTCHA:
       return bbf::captcha(opts);
-      break;
+    case Options::SECURITY_ERASE:
+      return bbf::security_erase(opts);
+    case Options::ENHANCED_SECURITY_ERASE:
+      return bbf::enhanced_security_erase(opts);
     }
 
   return AppError::success();

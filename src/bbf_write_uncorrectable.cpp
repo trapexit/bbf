@@ -40,7 +40,7 @@ namespace l
     int error;
 
     error = 0;
-    for(size_t i = 0, ei = badblocks_.size(); i != ei; ++i)
+    for(uint64_t i = 0, ei = badblocks_.size(); i != ei; ++i)
       {
         rv = blkdev_.write_pseudo_uncorrectable(badblocks_[i],logging_);
         if(rv < 0)
@@ -60,7 +60,7 @@ namespace l
     int error;
 
     error = 0;
-    for(size_t i = 0, ei = badblocks_.size(); i != ei; ++i)
+    for(uint64_t i = 0, ei = badblocks_.size(); i != ei; ++i)
       {
         rv = blkdev_.write_flagged_uncorrectable(badblocks_[i],logging_);
         if(rv < 0)

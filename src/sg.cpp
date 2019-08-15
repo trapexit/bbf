@@ -46,6 +46,87 @@ next_power_of_2(uint64_t v)
   return v;
 }
 
+namespace HostCode
+{
+  const
+  char*
+  to_string(const int err_)
+  {
+    switch(err_)
+      {
+      case OK:
+        return "No error (0x00)";
+      case NO_CONNECT:
+        return "Couldn't connect before timeout period (0x01)";
+      case BUS_BUSY:
+        return "Bus stayed busy through time out period (0x02)";
+      case TIME_OUT:
+        return "Timed out for other reason (0x03)";
+      case BAD_TARGET:
+        return "Bad target (0x04)";
+      case ABORT:
+        return "Told to abort for some other reason (0x05)";
+      case PARITY:
+        return "Parity error (0x06)";
+      case ERROR:
+        return "Internal error (0x07)";
+      case RESET:
+        return "Reset by somebody (0x08)";
+      case BAD_INTR:
+        return "Got an interrupt we weren't expecting (0x09)";
+      }
+
+    return "invalid error";
+  }
+
+  const
+  int
+  to_errno(const int err_)
+  {
+    return (err_ | 0x00000100);
+  }
+}
+
+namespace DriverCode
+{
+  const
+  char*
+  to_string(const int err_)
+  {
+    switch(err_)
+      {
+      case OK:
+        return "No Error (0x00)";
+      case BUSY:
+        return "Busy (0x01)";
+      case SOFT:
+        return "Soft (0x02)";
+      case MEDIA:
+        return "Media (0x03)";
+      case ERROR:
+        return "internal driver error (0x04)";
+      case INVALID:
+        return "finished (DID_BAD_TARGET or DID_ABORT) (0x05)";
+      case TIMEOUT:
+        return "finished with timeout (0x06)";
+      case HARD:
+        return "finished with fatal error (0x07)";
+      case SENSE:
+        return "had sense information available (0x08)";
+      }
+
+    return "unknown";
+  }
+
+  const
+  int
+  to_errno(const int err_)
+  {
+    return (err_ | 0x00000200);
+  }
+}
+
+
 namespace sg
 {
   static
@@ -284,13 +365,15 @@ namespace sg
     if(rv == -1)
       return -errno;
 
-    if(io_hdr.status && (io_hdr.status != SG_CHECK_CONDITION))
+    if(io_hdr.status && (io_hdr.status != StatusCode::CHECK_CONDITION))
       return -EBADE;
     if(io_hdr.host_status)
-      return -EBADE;
-    if(io_hdr.driver_status && (io_hdr.driver_status != SG_DRIVER_SENSE))
-      return -EBADE;
-    if(io_hdr.sbp[8] == 0x09) // ATA Return
+      return -HostCode::to_errno(io_hdr.host_status);
+    if(io_hdr.driver_status &&
+       ((DriverCode::to_errno(io_hdr.driver_status) != DriverCode::SENSE)))
+      return -DriverCode::to_errno(io_hdr.driver_status);
+    if((SenseData::sense_key(io_hdr.sbp) != SenseData::SenseKey::NO_SENSE) &&
+       (SenseData::sense_key(io_hdr.sbp) != SenseData::SenseKey::RECOVERED_ERROR))
       return -SenseData::asc_ascq_to_errno(io_hdr.sbp);
 
     return 0;
@@ -333,12 +416,40 @@ namespace sg
       tmpbuf[i] = ntohs(buf16[i]);
 
     ident.rpm = buf16[217];
-    ident.smart_supported = (((buf16[83] >> 14) == 0x01) ? (buf16[82] & 0x0001) : 0);
-    ident.smart_enabled   = (((buf16[87] >> 14) == 0x01) ? (buf16[85] & 0x0001) : 0);
-    ident.write_uncorrectable_ext = (((buf16[83]  & 0xC000) == 0x4000) &&
-                                     ((buf16[86]  & 0x8000) == 0x8000) &&
-                                     ((buf16[119] & 0xC004) == 0x4004) &&
-                                     ((buf16[120] & 0xC000) == 0x4000));
+    ident.trim_supported = !!(buf16[169] & 0x0001);
+    ident.form_factor    = (buf16[168] & 0x0003);
+    ident.smart_supported    = (((buf16[83] & 0xC000) == 0x4000) && (buf16[82] & 0x0001));
+    ident.smart_enabled      = (((buf16[87] & 0xC000) == 0x4000) && (buf16[85] & 0x0001));
+    ident.security_supported = (((buf16[83] & 0xC000) == 0x4000) && (buf16[82] & 0x0002));
+    ident.security_enabled   = (((buf16[87] & 0xC000) == 0x4000) && (buf16[85] & 0x0002));
+    ident.security_locked                   = !!(buf16[128] & 0x0004);
+    ident.security_frozen                   = !!(buf16[128] & 0x0008);
+    ident.security_count_expired            = !!(buf16[128] & 0x0010);
+    ident.security_enhanced_erase_supported = !!(buf16[128] & 0x0020);
+    ident.write_uncorrectable = (((buf16[83]  & 0xC000) == 0x4000) &&
+                                 ((buf16[86]  & 0x8000) == 0x8000) &&
+                                 ((buf16[119] & 0xC004) == 0x4004) &&
+                                 ((buf16[120] & 0xC004) == 0x4004));
+    ident.block_erase        = !!(buf16[59] & 0x8000);
+    ident.overwrite          = !!(buf16[59] & 0x4000);
+    ident.crypto_scramble    = !!(buf16[59] & 0x2000);
+    ident.sanitize           = !!(buf16[59] & 0x1000);
+    ident.supports_sata_gen1 = !!(buf16[76] & 0x0002);
+    ident.supports_sata_gen2 = !!(buf16[76] & 0x0004);
+    ident.supports_sata_gen3 = !!(buf16[76] & 0x0008);
+
+    ident.security_normal_erase_time   = (((buf16[89] & 0x8000) ?
+                                           (buf16[89] & 0x7FFF) :
+                                           (buf16[89] & 0x00FF)) * 2);
+    if((ident.security_normal_erase_time == 0x7FFF) ||
+       (ident.security_normal_erase_time == 0x00FF))
+      ident.security_normal_erase_time += 90;
+    ident.security_enhanced_erase_time = (((buf16[90] & 0x8000) ?
+                                           (buf16[90] & 0x7FFF) :
+                                           (buf16[90] & 0x00FF)) * 2);
+    if((ident.security_enhanced_erase_time == 0x7FFF) ||
+       (ident.security_enhanced_erase_time == 0x00FF))
+      ident.security_enhanced_erase_time += 90;
 
     sscanf((char*)&tmpbuf[10],"%20s",ident.serial_number);
     sscanf((char*)&tmpbuf[23],"%8s",ident.firmware_revision);
@@ -481,5 +592,84 @@ namespace sg
              sg::ATA_WRITE_UNCORRECTABLE_EXT_PSEUDO_WO_LOGGING);
 
     return write_uncorrectable(fd_,lba_,instr,timeout_);
+  }
+
+  int
+  security_set_password(const int  fd_,
+                        const int  identifier_,
+                        const char password_[32],
+                        const int  timeout_)
+  {
+    uint8_t data[512];
+    struct ata_tf tf;
+
+    ::memset(data,0,512);
+    ::memcpy(&data[2],password_,32);
+    switch(identifier_)
+      {
+      case SG_IDENTIFIER_USER:
+        data[0] = 0x00;
+        break;
+      case SG_IDENTIFIER_MASTER:
+        data[0] = 0x01;
+      default:
+        return -EINVAL;
+      }
+
+    tf_init(&tf,ATA_OP_SECURITY_SET_PASSWORD,0,0);
+
+    return exec(fd_,SG_WRITE,SG_PIO,&tf,data,512,timeout_);
+  }
+
+  int
+  security_erase_prepare(const int fd_,
+                         const int timeout_)
+  {
+    struct ata_tf tf;
+
+    tf_init(&tf,ATA_OP_SECURITY_ERASE_PREPARE,0,0);
+
+    return exec(fd_,SG_READ,SG_PIO,&tf,NULL,0,timeout_);
+  }
+
+  int
+  security_erase(const int  fd_,
+                 const int  erase_mode_,
+                 const int  identifier_,
+                 const char password_[32],
+                 const int  timeout_)
+  {
+    struct ata_tf tf;
+    uint8_t data[512];
+
+    ::memset(data,0,512);
+    ::memcpy(&data[2],password_,32);
+    switch(identifier_)
+      {
+      case SG_IDENTIFIER_USER:
+        data[0] |= 0x00;
+        break;
+      case SG_IDENTIFIER_MASTER:
+        data[0] |= 0x01;
+        break;
+      default:
+        return -EINVAL;
+      }
+
+    switch(erase_mode_)
+      {
+      case SG_ERASE_NORMAL:
+        data[0] |= 0x00;
+        break;
+      case SG_ERASE_ENHANCED:
+        data[0] |= 0x02;
+        break;
+      default:
+        return -EINVAL;
+      }
+
+    tf_init(&tf,ATA_OP_SECURITY_ERASE_UNIT,0,1);
+
+    return exec(fd_,SG_WRITE,SG_PIO,&tf,data,512,timeout_);
   }
 }

@@ -123,7 +123,7 @@ scan(const std::string           &basepath,
             int fd;
             int rv;
 
-            fd = ::openat(dfd,d->d_name,O_RDONLY);
+            fd = ::openat(dfd,d->d_name,O_RDONLY|O_NOFOLLOW);
             if(fd == -1)
               break;
 
