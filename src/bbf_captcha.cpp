@@ -26,40 +26,43 @@
 #include "filetoblkdev.hpp"
 #include "options.hpp"
 
-static
-int
-open_file_dev(BlkDev            &blkdev,
-              const std::string &filepath)
+namespace l
 {
-  std::string devpath;
+  static
+  int
+  open_file_dev(BlkDev            &blkdev_,
+                const std::string &filepath_)
+  {
+    std::string devpath;
 
-  devpath = FileToBlkDev::find(filepath);
-  if(devpath.empty())
-    return -ENOENT;
+    devpath = FileToBlkDev::find(filepath_);
+    if(devpath.empty())
+      return -ENOENT;
 
-  return blkdev.open_read(devpath);
+    return blkdev_.open_read(devpath);
+  }
 }
 
 namespace bbf
 {
   AppError
-  captcha(const Options &opts)
+  captcha(const Options &opts_)
   {
     int rv;
     BlkDev blkdev;
 
-    rv = blkdev.open_read(opts.device);
+    rv = blkdev.open_read(opts_.device);
     if(rv == -ENOTBLK)
-      rv = open_file_dev(blkdev,opts.device);
+      rv = l::open_file_dev(blkdev,opts_.device);
 
     if(rv < 0)
-      return AppError::opening_device(-rv,opts.device);
+      return AppError::opening_device(-rv,opts_.device);
 
     std::cout << captcha::calculate(blkdev) << std::endl;
 
     rv = blkdev.close();
     if(rv < 0)
-      return AppError::closing_device(-rv,opts.device);
+      return AppError::closing_device(-rv,opts_.device);
 
     return AppError::success();
   }

@@ -31,6 +31,7 @@
 
 #define BASE10 10
 
+
 static
 void
 usage(std::ostream &os)
@@ -122,7 +123,7 @@ Options::process_arg(const int          argc,
       stepping = ::strtoull(optarg,NULL,BASE10);
       if((stepping == ULLONG_MAX) && (errno == ERANGE))
         return AppError::argument_invalid("invalid stepping");
-      if((stepping > 65536) || (stepping <= 1))
+      if((stepping > 65536) || (stepping < 1))
         return AppError::argument_invalid("stepping must be >= 1 && <= 65536");
       break;
     case 'M':
@@ -263,17 +264,19 @@ Options::validate(void) const
       break;
     case Options::FIX:
     case Options::FIX_FILE:
-    case Options::SECURITY_ERASE:
-    case Options::ENHANCED_SECURITY_ERASE:
     case Options::WRITE_PSEUDO_UNCORRECTABLE_WL:
     case Options::WRITE_PSEUDO_UNCORRECTABLE_WOL:
     case Options::WRITE_FLAGGED_UNCORRECTABLE_WL:
     case Options::WRITE_FLAGGED_UNCORRECTABLE_WOL:
       if(captcha.empty())
         return AppError::argument_required("captcha");
+      break;
     case Options::FIND_FILES:
-      if(input_file.empty())
-        return AppError::argument_required("input file");
+      break;
+    case Options::SECURITY_ERASE:
+    case Options::ENHANCED_SECURITY_ERASE:
+      if(captcha.empty())
+        return AppError::argument_required("captcha");
       break;
     case Options::DUMP_FILES:
     case Options::INFO:

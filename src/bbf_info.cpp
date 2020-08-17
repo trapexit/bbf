@@ -16,13 +16,14 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <iostream>
-#include <utility>
-
 #include "blkdev.hpp"
 #include "errors.hpp"
 #include "num.hpp"
 #include "options.hpp"
+
+#include <iostream>
+#include <utility>
+
 
 namespace l
 {
@@ -52,17 +53,17 @@ namespace l
 namespace bbf
 {
   AppError
-  info(const Options &opts)
+  info(const Options &opts_)
   {
     int rv;
     BlkDev blkdev;
     sg::identity ident;
 
-    rv = blkdev.open_read(opts.device);
+    rv = blkdev.open_read(opts_.device);
     if(rv < 0)
-      return AppError::opening_device(-rv,opts.device);
+      return AppError::opening_device(-rv,opts_.device);
 
-    std::cout << opts.device << ":" << std::endl;
+    std::cout << opts_.device << ":" << std::endl;
 
     if(blkdev.has_identity())
       {
@@ -113,7 +114,7 @@ namespace bbf
 
     rv = blkdev.close();
     if(rv < 0)
-      return AppError::closing_device(-rv,opts.device);
+      return AppError::closing_device(-rv,opts_.device);
 
     return AppError::success();
   }

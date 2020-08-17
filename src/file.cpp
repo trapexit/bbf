@@ -16,6 +16,14 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+
+#include "fiemap.hpp"
+#include "filetoblkdev.hpp"
+#include "ioctl.hpp"
+
+#include <string>
+#include <vector>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
@@ -24,12 +32,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <string>
-#include <vector>
-
-#include "fiemap.hpp"
-#include "filetoblkdev.hpp"
-#include "ioctl.hpp"
 
 namespace File
 {

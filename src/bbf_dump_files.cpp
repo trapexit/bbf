@@ -49,14 +49,14 @@ operator<<(std::ostream                      &os,
 namespace bbf
 {
   AppError
-  dump_files(const Options &opts)
+  dump_files(const Options &opts_)
   {
     int rv;
     BlockToFileMapper b2fm;
 
-    rv = b2fm.scan(opts.device);
+    rv = b2fm.scan(opts_.device);
     if(rv < 0)
-      return AppError::opening_device(-rv,opts.device);
+      return AppError::opening_device(-rv,opts_.device);
 
     std::cout << b2fm.blockmap();
 

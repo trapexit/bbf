@@ -59,7 +59,7 @@ BlkDev::_reset_data(void)
   _size_in_bytes        =  0;
   _logical_block_count  =  0;
   _physical_block_count =  0;
-  _timeout              =  SECONDS(60);
+  _timeout              =  SECONDS(10);
   _has_identity         =  false;
 }
 

@@ -29,17 +29,17 @@
 namespace bbf
 {
   AppError
-  find_files(const Options &opts)
+  find_files(const Options &opts_)
   {
     int rv;
     BlockToFileMapper b2fm;
     std::vector<uint64_t> badblocks;
 
-    rv = BadBlockFile::read(opts.input_file,badblocks);
+    rv = BadBlockFile::read(opts_.input_file,badblocks);
     if(rv < 0)
-      return AppError::reading_badblocks_file(-rv,opts.input_file);
+      return AppError::reading_badblocks_file(-rv,opts_.input_file);
 
-    b2fm.scan(opts.device);
+    b2fm.scan(opts_.device);
 
     const std::string none = "[none]";
     for(uint64_t i = 0, ei = badblocks.size(); i != ei; i++)

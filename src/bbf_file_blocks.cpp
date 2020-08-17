@@ -16,26 +16,27 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <stdint.h>
-
-#include <iostream>
-#include <utility>
-
 #include "errors.hpp"
 #include "file.hpp"
 #include "options.hpp"
 
+#include <iostream>
+#include <utility>
+
+#include <stdint.h>
+
+
 namespace bbf
 {
   AppError
-  file_blocks(const Options &opts)
+  file_blocks(const Options &opts_)
   {
     int rv;
     File::BlockVector blockvector;
 
-    rv = File::blocks(opts.device,blockvector);
+    rv = File::blocks(opts_.device,blockvector);
     if(rv < 0)
-      return AppError::opening_file(-rv,opts.device);
+      return AppError::opening_file(-rv,opts_.device);
 
     for(uint64_t i = 0, ei = blockvector.size(); i != ei; i++)
       {

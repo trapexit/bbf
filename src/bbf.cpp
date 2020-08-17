@@ -35,59 +35,62 @@
 #include <iostream>
 #include <utility>
 
-static
-AppError
-process_instruction(const Options &opts)
+namespace l
 {
-  if(opts.quiet)
-    std::cout.setstate(std::ios::failbit);
+  static
+  AppError
+  process_instruction(const Options &opts_)
+  {
+    if(opts_.quiet)
+      std::cout.setstate(std::ios::failbit);
 
-  switch(opts.instruction)
-    {
-    case Options::INFO:
-      return bbf::info(opts);
-    case Options::SCAN:
-      return bbf::scan(opts);
-    case Options::FIX:
-      return bbf::fix(opts);
-    case Options::FIX_FILE:
-      return bbf::fix_file(opts);
-    case Options::FIND_FILES:
-      return bbf::find_files(opts);
-    case Options::FILE_BLOCKS:
-      return bbf::file_blocks(opts);
-    case Options::DUMP_FILES:
-      return bbf::dump_files(opts);
-    case Options::WRITE_PSEUDO_UNCORRECTABLE_WL:
-    case Options::WRITE_PSEUDO_UNCORRECTABLE_WOL:
-    case Options::WRITE_FLAGGED_UNCORRECTABLE_WL:
-    case Options::WRITE_FLAGGED_UNCORRECTABLE_WOL:
-      return bbf::write_uncorrectable(opts);
-    case Options::BURNIN:
-      return bbf::burnin(opts);
-    case Options::CAPTCHA:
-      return bbf::captcha(opts);
-    case Options::SECURITY_ERASE:
-      return bbf::security_erase(opts);
-    case Options::ENHANCED_SECURITY_ERASE:
-      return bbf::enhanced_security_erase(opts);
-    }
+    switch(opts_.instruction)
+      {
+      case Options::INFO:
+        return bbf::info(opts_);
+      case Options::SCAN:
+        return bbf::scan(opts_);
+      case Options::FIX:
+        return bbf::fix(opts_);
+      case Options::FIX_FILE:
+        return bbf::fix_file(opts_);
+      case Options::FIND_FILES:
+        return bbf::find_files(opts_);
+      case Options::FILE_BLOCKS:
+        return bbf::file_blocks(opts_);
+      case Options::DUMP_FILES:
+        return bbf::dump_files(opts_);
+      case Options::WRITE_PSEUDO_UNCORRECTABLE_WL:
+      case Options::WRITE_PSEUDO_UNCORRECTABLE_WOL:
+      case Options::WRITE_FLAGGED_UNCORRECTABLE_WL:
+      case Options::WRITE_FLAGGED_UNCORRECTABLE_WOL:
+        return bbf::write_uncorrectable(opts_);
+      case Options::BURNIN:
+        return bbf::burnin(opts_);
+      case Options::CAPTCHA:
+        return bbf::captcha(opts_);
+      case Options::SECURITY_ERASE:
+        return bbf::security_erase(opts_);
+      case Options::ENHANCED_SECURITY_ERASE:
+        return bbf::enhanced_security_erase(opts_);
+      }
 
-  return AppError::success();
+    return AppError::success();
+  }
 }
 
 int
-main(int    argc,
-     char **argv)
+main(int    argc_,
+     char **argv_)
 {
   AppError rv;
   Options opts;
 
   signals::setup_handlers();
 
-  rv = opts.parse(argc,argv);
+  rv = opts.parse(argc_,argv_);
   if(rv.succeeded())
-    rv = process_instruction(opts);
+    rv = l::process_instruction(opts);
 
   if(!rv.succeeded())
     std::cerr << rv.to_string() << std::endl;

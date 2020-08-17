@@ -18,13 +18,13 @@
 
 #pragma once
 
-#include <stdint.h>
+#include "blkdev.hpp"
 
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "blkdev.hpp"
+#include <stdint.h>
 
 namespace BadBlockFile
 {
