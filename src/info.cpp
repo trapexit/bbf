@@ -38,7 +38,7 @@ namespace Info
     const size_t badcount          = badblocks.size();
     const size_t processed_blocks  = (current_block - start_block);
     const size_t total_blocks      = (end_block - start_block);
-    const size_t blocks_left       = (end_block - processed_blocks);
+    const size_t blocks_left       = (total_blocks - processed_blocks);
     const double percentage        = (((double)processed_blocks / total_blocks) * 100.0);
     const double time_passed       = (current_time - start_time);
     const double blocks_per_second = ((double)processed_blocks / time_passed);
