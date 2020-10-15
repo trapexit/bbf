@@ -16,42 +16,43 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include <string>
+
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <string>
 
 namespace FileToBlkDev
 {
   static
   dev_t
-  st_dev(const std::string &filepath)
+  st_dev(const std::string &filepath_)
   {
     int rv;
     struct stat st;
 
-    rv = ::lstat(filepath.c_str(),&st);
+    rv = ::lstat(filepath_.c_str(),&st);
 
     return ((rv == -1) ? -1 : st.st_dev);
   }
 
   static
   dev_t
-  st_rdev(const std::string &filepath)
+  st_rdev(const std::string &filepath_)
   {
     int rv;
     struct stat st;
 
-    rv = ::lstat(filepath.c_str(),&st);
+    rv = ::lstat(filepath_.c_str(),&st);
 
     return ((rv == -1) ? -1 : st.st_rdev);
   }
 
   static
   std::string
-  find(const dev_t device)
+  find(const dev_t device_)
   {
     DIR *dir;
     std::string devpath;
@@ -67,8 +68,8 @@ namespace FileToBlkDev
 
         devpath = devstr + d->d_name;
 
-        rdev = st_rdev(devpath);
-        if(rdev == device)
+        rdev = FileToBlkDev::st_rdev(devpath);
+        if(rdev == device_)
           {
             ::closedir(dir);
             return devpath;
@@ -81,11 +82,11 @@ namespace FileToBlkDev
   }
 
   std::string
-  find(const std::string &filepath)
+  find(const std::string &filepath_)
   {
     dev_t device;
 
-    device = st_dev(filepath);
+    device = FileToBlkDev::st_dev(filepath_);
 
     return FileToBlkDev::find(device);
   }

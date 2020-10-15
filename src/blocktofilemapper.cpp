@@ -16,6 +16,13 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+
+#include "blocktofilemapper.hpp"
+#include "fiemap.hpp"
+#include "file.hpp"
+#include "filetoblkdev.hpp"
+#include "ioctl.hpp"
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -24,11 +31,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "blocktofilemapper.hpp"
-#include "fiemap.hpp"
-#include "file.hpp"
-#include "filetoblkdev.hpp"
-#include "ioctl.hpp"
 
 namespace iter
 {

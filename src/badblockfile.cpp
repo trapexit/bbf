@@ -16,8 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <stdint.h>
-#include <stdlib.h>
+#include "badblockfile.hpp"
+#include "captcha.hpp"
+#include "blkdev.hpp"
 
 #include <string>
 #include <vector>
@@ -25,12 +26,12 @@
 #include <fstream>
 #include <sstream>
 
-#include "badblockfile.hpp"
-#include "captcha.hpp"
-#include "blkdev.hpp"
+#include <stdint.h>
+#include <stdlib.h>
+
 
 std::string
-BadBlockFile::filepath(const BlkDev &blkdev)
+BadBlockFile::filepath(const BlkDev &blkdev_)
 {
   const char *homedir;
   std::stringstream ss;
@@ -39,44 +40,47 @@ BadBlockFile::filepath(const BlkDev &blkdev)
   if((homedir == NULL) || (homedir[0] == '\0'))
     homedir = "/root";
 
-  ss << homedir << "/badblocks." << captcha::calculate(blkdev);
+  ss << homedir << "/badblocks." << captcha::calculate(blkdev_);
 
   return ss.str();
 }
 
-static
-void
-_read(std::istream          &stream,
-      std::vector<uint64_t> &blocks)
+namespace l
 {
-  while(!stream.eof())
-    {
-      uint64_t block;
+  static
+  void
+  read(std::istream          &stream_,
+       std::vector<uint64_t> &blocks_)
+  {
+    while(!stream_.eof())
+      {
+        uint64_t block;
 
-      stream >> block;
+        stream_ >> block;
 
-      if(!stream.eof())
-        blocks.push_back(block);
-    }
+        if(!stream_.eof())
+          blocks_.push_back(block);
+      }
+  }
 }
 
 int
-BadBlockFile::read(const std::string     &filepath,
-                   std::vector<uint64_t> &blocks)
+BadBlockFile::read(const std::string     &filepath_,
+                   std::vector<uint64_t> &blocks_)
 {
-  if(filepath == "-")
+  if(filepath_ == "-")
     {
-      _read(std::cin,blocks);
+      l::read(std::cin,blocks_);
     }
   else
     {
       std::ifstream file;
 
-      file.open(filepath.c_str());
+      file.open(filepath_.c_str());
       if(!file.is_open() || file.bad())
         return -1;
 
-      _read(file,blocks);
+      l::read(file,blocks_);
 
       file.close();
     }
@@ -84,32 +88,35 @@ BadBlockFile::read(const std::string     &filepath,
   return 0;
 }
 
-static
-void
-_write(std::ostream                &stream,
-       const std::vector<uint64_t> &blocks)
+namespace l
 {
-  for(size_t i = 0, ei = blocks.size(); i != ei; i++)
-    stream << blocks[i] << std::endl;
+  static
+  void
+  write(std::ostream                &stream_,
+        const std::vector<uint64_t> &blocks_)
+  {
+    for(size_t i = 0, ei = blocks_.size(); i != ei; i++)
+      stream_ << blocks_[i] << std::endl;
+  }
 }
 
 int
-BadBlockFile::write(const std::string           &filepath,
-                    const std::vector<uint64_t> &blocks)
+BadBlockFile::write(const std::string           &filepath_,
+                    const std::vector<uint64_t> &blocks_)
 {
-  if(filepath == "-")
+  if(filepath_ == "-")
     {
-      _write(std::cout,blocks);
+      l::write(std::cout,blocks_);
     }
   else
     {
       std::ofstream file;
 
-      file.open(filepath.c_str());
+      file.open(filepath_.c_str());
       if(!file.is_open() || file.bad())
         return -1;
 
-      _write(file,blocks);
+      l::write(file,blocks_);
 
       file.close();
     }

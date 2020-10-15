@@ -19,10 +19,30 @@
 #ifndef __INFO_HPP__
 #define __INFO_HPP__
 
+#include "vectors.hpp"
+
 #include <iostream>
-#include <vector>
 
 #include <stdint.h>
+
+class InfoPrinter
+{
+public:
+  InfoPrinter();
+
+public:
+  void init(const size_t  start_block_,
+            const size_t  end_block_,
+            U64Vec       *badblocks_);
+
+  void print(const size_t current_block_);
+
+private:
+  double  _start_time;
+  size_t  _start_block;
+  size_t  _end_block;
+  U64Vec *_badblocks;
+};
 
 namespace Info
 {
@@ -30,6 +50,21 @@ namespace Info
   print(std::ostream                &os,
         const double                 start_time,
         const double                 current_time,
+        const size_t                 start_block,
+        const size_t                 end_block,
+        const size_t                 current_block,
+        const std::vector<uint64_t> &badblocks);
+
+  void
+  print(const double                 start_time,
+        const double                 current_time,
+        const size_t                 start_block,
+        const size_t                 end_block,
+        const size_t                 current_block,
+        const std::vector<uint64_t> &badblocks);
+
+  void
+  print(const double                 start_time,
         const size_t                 start_block,
         const size_t                 end_block,
         const size_t                 current_block,

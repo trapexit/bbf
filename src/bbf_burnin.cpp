@@ -16,12 +16,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <errno.h>
-#include <stdint.h>
-
-#include <iostream>
-#include <utility>
-
 #include "badblockfile.hpp"
 #include "blkdev.hpp"
 #include "captcha.hpp"
@@ -32,294 +26,299 @@
 #include "signals.hpp"
 #include "time.hpp"
 
-static
-uint64_t
-trim_stepping(const BlkDev   &blkdev_,
-              const uint64_t  block_,
-              const uint64_t  stepping_)
+#include <iostream>
+#include <utility>
+
+#include <errno.h>
+#include <stdint.h>
+
+namespace l
 {
-  uint64_t block_count;
+  static
+  uint64_t
+  trim_stepping(const BlkDev   &blkdev_,
+                const uint64_t  block_,
+                const uint64_t  stepping_)
+  {
+    uint64_t block_count;
 
-  block_count = blkdev_.logical_block_count();
+    block_count = blkdev_.logical_block_count();
 
-  if(block_ > block_count)
+    if(block_ >= block_count)
+      return 0;
+    if((block_count - block_) < stepping_)
+      return blkdev_.block_stepping();
+
+    return stepping_;
+  }
+
+  static
+  int
+  write_read_compare(BlkDev         &blkdev_,
+                     const uint64_t  stepping_,
+                     const uint64_t  block_,
+                     char           *buf_,
+                     const size_t    buflen_,
+                     const int       retries_,
+                     const char     *write_buf_)
+  {
+    int rv;
+
+    rv = -1;
+    for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
+      rv = blkdev_.write(block_,stepping_,write_buf_,buflen_);
+
+    if(rv < 0)
+      return rv;
+
+    rv = -1;
+    for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
+      rv = blkdev_.read(block_,stepping_,buf_,buflen_);
+
+    if(rv < 0)
+      return rv;
+
+    rv = ::memcmp(write_buf_,buf_,buflen_);
+    if(rv != 0)
+      return -EIO;
+
     return 0;
+  }
 
-  return std::min(block_count - block_,stepping_);
-}
+  static
+  int
+  burn_block(BlkDev         &blkdev_,
+             const uint64_t  stepping_,
+             const uint64_t  block_,
+             char           *buf_,
+             const size_t    buflen_,
+             const uint64_t  retries_,
+             const std::vector<std::vector<char> > &patterns_)
+  {
+    int rv;
 
-static
-int
-write_read_compare(BlkDev         &blkdev,
-                   const uint64_t  stepping_,
-                   const uint64_t  block,
-                   char           *buf_,
-                   const size_t    buflen_,
-                   const int       retries,
-                   const char     *write_buf)
-{
-  int rv;
+    rv = -1;
+    for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
+      rv = blkdev_.read(block_,stepping_,buf_,buflen_);
 
-  rv = -1;
-  for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
-    rv = blkdev.write(block,stepping_,write_buf,buflen_);
+    if(rv < 0)
+      ::memset(buf_,0,buflen_);
 
-  if(rv < 0)
+    for(uint64_t i = 0; i < patterns_.size(); i++)
+      rv = l::write_read_compare(blkdev_,stepping_,block_,buf_,buflen_,retries_,&patterns_[i][0]);
+
+    rv = -1;
+    for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
+      rv = blkdev_.write(block_,stepping_,buf_,buflen_);
+
     return rv;
+  }
 
-  rv = -1;
-  for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
-    rv = blkdev.read(block,stepping_,buf_,buflen_);
+  static
+  int
+  burnin_loop(BlkDev                &blkdev_,
+              const uint64_t         start_block_,
+              const uint64_t         end_block_,
+              const uint64_t         stepping_,
+              char                  *buf_,
+              const size_t           buflen_,
+              std::vector<uint64_t> &badblocks_,
+              const uint64_t         max_errors_,
+              const int              retries_)
+  {
+    int rv;
+    uint64_t block;
+    uint64_t stepping;
+    InfoPrinter info;
+    std::vector<std::vector<char> > patterns;
+    const double start_time = Time::get_monotonic();
 
-  if(rv < 0)
+    patterns.resize(4);
+    patterns[0].resize(buflen_,0x00);
+    patterns[1].resize(buflen_,0x55);
+    patterns[2].resize(buflen_,0xAA);
+    patterns[3].resize(buflen_,0xFF);
+
+    info.init(start_block_,end_block_,&badblocks_);
+    info.print(start_block_);
+
+    block = start_block_;
+    while(block < end_block_)
+      {
+        if(signals::signaled_to_exit())
+          break;
+
+        if(signals::dec(SIGALRM))
+          {
+            signals::alarm(1);
+            info.print(block);
+          }
+
+        stepping = l::trim_stepping(blkdev_,block,stepping_);
+
+        rv = l::burn_block(blkdev_,stepping,block,buf_,buflen_,retries_,patterns);
+
+        block += stepping;
+        if(rv >= 0)
+          continue;
+        if(rv == -EINVAL)
+          break;
+
+        info.print(block);
+
+        for(uint64_t i = 0; i < stepping; i++)
+          badblocks_.push_back(block+i);
+
+        if(badblocks_.size() > max_errors_)
+          break;
+      }
+
+    info.print(block);
+
     return rv;
+  }
 
-  rv = ::memcmp(write_buf,buf_,buflen_);
-  if(rv != 0)
-    return -EIO;
+  static
+  AppError
+  burnin(BlkDev                &blkdev_,
+         const Options         &opts_,
+         std::vector<uint64_t> &badblocks_)
+  {
+    int       rv;
+    int       retries;
+    char     *buf;
+    size_t    buflen;
+    uint64_t  start_block;
+    uint64_t  end_block;
+    uint64_t  stepping;
 
-  return 0;
-}
+    retries     = opts_.retries;
+    stepping    = ((opts_.stepping == 0) ?
+                   blkdev_.block_stepping() :
+                   opts_.stepping);
+    buflen      = (stepping * blkdev_.logical_block_size());
+    start_block = math::round_down(opts_.start_block,stepping);
+    end_block   = std::min(opts_.end_block,blkdev_.logical_block_count());
+    end_block   = math::round_up(end_block,stepping);
+    end_block   = std::min(end_block,blkdev_.logical_block_count());
 
-static
-int
-burn_block(BlkDev         &blkdev,
-           const uint64_t  stepping_,
-           const uint64_t  block,
-           char           *buf_,
-           const size_t    buflen_,
-           const uint64_t  retries,
-           const std::vector<std::vector<char> > &patterns_)
-{
-  int rv;
+    std::cout << "start block: "
+              << start_block << std::endl
+              << "end block: "
+              << end_block << std::endl
+              << "stepping: "
+              << stepping << std::endl
+              << "logical block size: "
+              << blkdev_.logical_block_size() << std::endl
+              << "physical block size: "
+              << blkdev_.physical_block_size() << std::endl
+              << "r/w size: "
+              << stepping << " blocks / "
+              << buflen << " bytes"
+              << std::endl;
 
-  rv = -1;
-  for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
-    rv = blkdev.read(block,stepping_,buf_,buflen_);
+    signals::alarm(1);
 
-  if(rv < 0)
-    ::memset(buf_,0,buflen_);
+    std::cout << "\r\x1B[2KBurning: "
+              << start_block
+              << " - "
+              << end_block
+              << std::endl;
 
-  for(uint64_t i = 0; i < patterns_.size(); i++)
-    rv = write_read_compare(blkdev,stepping_,block,buf_,buflen_,retries,&patterns_[i][0]);
+    buf = new char[buflen];
+    rv = l::burnin_loop(blkdev_,
+                     start_block,
+                     end_block,
+                     stepping,
+                     buf,
+                     buflen,
+                     badblocks_,
+                     opts_.max_errors,
+                     retries);
+    delete[] buf;
 
-  rv = -1;
-  for(uint64_t i = 0; ((i <= retries) && (rv < 0)); i++)
-    rv = blkdev.write(block,stepping_,buf_,buflen_);
+    std::cout << std::endl;
 
-  return rv;
-}
+    if(rv < 0)
+      return AppError::runtime(-rv,"error when performing burnin");
 
-static
-int
-burnin_loop(BlkDev                &blkdev,
-            const uint64_t         start_block,
-            const uint64_t         end_block,
-            const uint64_t         stepping_,
-            char                  *buf_,
-            const size_t           buflen_,
-            std::vector<uint64_t> &badblocks,
-            const uint64_t         max_errors_,
-            const int              retries)
-{
-  int rv;
-  uint64_t block;
-  uint64_t stepping;
-  double current_time;
-  std::vector<std::vector<char> > patterns;
-  const double start_time = Time::get_monotonic();
+    return AppError::success();
+  }
 
-  patterns.resize(4);
-  patterns[0].resize(buflen_,0x00);
-  patterns[1].resize(buflen_,0x55);
-  patterns[2].resize(buflen_,0xAA);
-  patterns[3].resize(buflen_,0xFF);
-
-  current_time = Time::get_monotonic();
-  Info::print(std::cout,start_time,current_time,
-              start_block,end_block,start_block,badblocks);
-
-  block = start_block;
-  while(block < end_block)
-    {
-      if(signals::signaled_to_exit())
+  static
+  void
+  set_blkdev_rwtype(BlkDev                &blkdev_,
+                    const Options::RWType  rwtype_)
+  {
+    switch(rwtype_)
+      {
+      case Options::ATA:
+        blkdev_.set_rw_ata();
         break;
-
-      if(signals::dec(SIGALRM))
-        {
-          signals::alarm(1);
-          current_time = Time::get_monotonic();
-          Info::print(std::cout,start_time,current_time,
-                      start_block,end_block,block,badblocks);
-        }
-
-      stepping = trim_stepping(blkdev,block,stepping_);
-
-      rv = burn_block(blkdev,stepping_,block,buf_,buflen_,retries,patterns);
-      block += stepping;
-      if(rv >= 0)
-        continue;
-      if(rv == -EINVAL)
+      case Options::OS:
+        blkdev_.set_rw_os();
         break;
+      }
+  }
 
-      current_time = Time::get_monotonic();
-      Info::print(std::cout,start_time,current_time,
-                  start_block,end_block,block,badblocks);
+  static
+  AppError
+  burnin(const Options &opts_)
+  {
+    int rv;
+    AppError err;
+    BlkDev blkdev;
+    std::string captcha;
+    std::string input_file;
+    std::string output_file;
+    std::vector<uint64_t> badblocks;
 
-      for(uint64_t i = 0; i < stepping; i++)
-        badblocks.push_back(block+i);
+    input_file  = opts_.input_file;
+    output_file = opts_.output_file;
 
-      if(badblocks.size() > max_errors_)
-        break;
-    }
+    rv = blkdev.open_rdwr(opts_.device,!opts_.force);
+    if(rv < 0)
+      return AppError::opening_device(-rv,opts_.device);
 
-  current_time = Time::get_monotonic();
-  Info::print(std::cout,start_time,current_time,
-              start_block,end_block,block,badblocks);
+    captcha = captcha::calculate(blkdev);
+    if(opts_.captcha != captcha)
+      return AppError::captcha(opts_.captcha,captcha);
 
-  return rv;
-}
+    if(output_file.empty())
+      output_file = BadBlockFile::filepath(blkdev);
 
-static
-AppError
-burnin(BlkDev                &blkdev,
-       const Options         &opts,
-       std::vector<uint64_t> &badblocks)
-{
-  int       rv;
-  int       retries;
-  char     *buf;
-  size_t    buflen;
-  uint64_t  start_block;
-  uint64_t  end_block;
-  uint64_t  stepping;
+    if(input_file.empty())
+      input_file = output_file;
 
-  retries     = opts.retries;
-  stepping    = ((opts.stepping == 0) ?
-                 blkdev.block_stepping() :
-                 opts.stepping);
-  buflen      = (stepping * blkdev.logical_block_size());
-  start_block = math::round_down(opts.start_block,stepping);
-  end_block   = std::min(opts.end_block,blkdev.logical_block_count());
-  end_block   = math::round_up(end_block,stepping);
-  end_block   = std::min(end_block,blkdev.logical_block_count());
+    rv = BadBlockFile::read(input_file,badblocks);
+    if(rv < 0)
+      std::cout << "Warning: unable to open " << input_file << std::endl;
+    else
+      std::cout << "Imported bad blocks from " << input_file << std::endl;
 
-  std::cout << "start block: "
-            << start_block << std::endl
-            << "end block: "
-            << end_block << std::endl
-            << "stepping: "
-            << stepping << std::endl
-            << "logical block size: "
-            << blkdev.logical_block_size() << std::endl
-            << "physical block size: "
-            << blkdev.physical_block_size() << std::endl
-            << "r/w size: "
-            << stepping << " blocks / "
-            << buflen << " bytes"
-            << std::endl;
+    l::set_blkdev_rwtype(blkdev,opts_.rwtype);
 
-  signals::alarm(1);
+    err = l::burnin(blkdev,opts_,badblocks);
 
-  std::cout << "\r\x1B[2KBurning: "
-            << start_block
-            << " - "
-            << end_block
-            << std::endl;
+    rv = BadBlockFile::write(output_file,badblocks);
+    if((rv < 0) && err.succeeded())
+      err = AppError::writing_badblocks_file(-rv,output_file);
+    else if(!badblocks.empty())
+      std::cout << "Bad blocks written to " << output_file << std::endl;
 
-  buf = new char[buflen];
-  rv = burnin_loop(blkdev,
-                   start_block,
-                   end_block,
-                   stepping,
-                   buf,
-                   buflen,
-                   badblocks,
-                   opts.max_errors,
-                   retries);
-  delete[] buf;
+    rv = blkdev.close();
+    if((rv < 0) && err.succeeded())
+      err = AppError::closing_device(-rv,opts_.device);
 
-  std::cout << std::endl;
-
-  if(rv < 0)
-    return AppError::runtime(-rv,"error when performing burnin");
-
-  return AppError::success();
-}
-
-static
-void
-set_blkdev_rwtype(BlkDev                &blkdev,
-                  const Options::RWType  rwtype)
-{
-  switch(rwtype)
-    {
-    case Options::ATA:
-      blkdev.set_rw_ata();
-      break;
-    case Options::OS:
-      blkdev.set_rw_os();
-      break;
-    }
-}
-
-static
-AppError
-burnin(const Options &opts)
-{
-  int rv;
-  AppError err;
-  BlkDev blkdev;
-  std::string captcha;
-  std::string input_file;
-  std::string output_file;
-  std::vector<uint64_t> badblocks;
-
-  input_file  = opts.input_file;
-  output_file = opts.output_file;
-
-  rv = blkdev.open_rdwr(opts.device,!opts.force);
-  if(rv < 0)
-    return AppError::opening_device(-rv,opts.device);
-
-  captcha = captcha::calculate(blkdev);
-  if(opts.captcha != captcha)
-    return AppError::captcha(opts.captcha,captcha);
-
-  if(output_file.empty())
-    output_file = BadBlockFile::filepath(blkdev);
-
-  if(input_file.empty())
-    input_file = output_file;
-
-  rv = BadBlockFile::read(input_file,badblocks);
-  if(rv < 0)
-    std::cout << "Warning: unable to open " << input_file << std::endl;
-  else
-    std::cout << "Imported bad blocks from " << input_file << std::endl;
-
-  set_blkdev_rwtype(blkdev,opts.rwtype);
-
-  err = burnin(blkdev,opts,badblocks);
-
-  rv = BadBlockFile::write(output_file,badblocks);
-  if((rv < 0) && err.succeeded())
-    err = AppError::writing_badblocks_file(-rv,output_file);
-  else if(!badblocks.empty())
-    std::cout << "Bad blocks written to " << output_file << std::endl;
-
-  rv = blkdev.close();
-  if((rv < 0) && err.succeeded())
-    err = AppError::closing_device(-rv,opts.device);
-
-  return err;
+    return err;
+  }
 }
 
 namespace bbf
 {
   AppError
-  burnin(const Options &opts)
+  burnin(const Options &opts_)
   {
-    return ::burnin(opts);
+    return l::burnin(opts_);
   }
 }

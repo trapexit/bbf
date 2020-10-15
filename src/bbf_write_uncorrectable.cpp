@@ -28,6 +28,7 @@
 
 #include <stdint.h>
 
+
 namespace l
 {
   static
@@ -95,9 +96,9 @@ namespace bbf
     if(input_file.empty())
       input_file = BadBlockFile::filepath(blkdev);
 
-    rv = BadBlockFile::read(opts_.input_file,badblocks);
+    rv = BadBlockFile::read(input_file,badblocks);
     if(rv < 0)
-      return AppError::reading_badblocks_file(-rv,opts_.input_file);
+      return AppError::reading_badblocks_file(-rv,input_file);
 
     switch(opts_.instruction)
       {
