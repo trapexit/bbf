@@ -66,6 +66,7 @@ public:
   static const AppError success();
   static const AppError argument_required(const std::string&);
   static const AppError argument_invalid(const std::string&);
+  static const AppError not_a_directory(const std::string&);
   static const AppError opening_device(const int, const std::string&);
   static const AppError closing_device(const int, const std::string&);
   static const AppError identifying_device(const int, const std::string&);

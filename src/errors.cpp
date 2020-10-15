@@ -103,64 +103,71 @@ AppError::success(void)
 
 const
 AppError
-AppError::argument_required(const std::string &_extra)
+AppError::argument_required(const std::string &extra_)
 {
-  return AppError(ARGUMENT_REQUIRED,EINVAL,_extra);
+  return AppError(ARGUMENT_REQUIRED,EINVAL,extra_);
 }
 
 const
 AppError
-AppError::argument_invalid(const std::string &_extra)
+AppError::argument_invalid(const std::string &extra_)
 {
-  return AppError(ARGUMENT_INVALID,EINVAL,_extra);
+  return AppError(ARGUMENT_INVALID,EINVAL,extra_);
 }
 
 const
 AppError
-AppError::opening_device(const int          _error,
-                         const std::string &_extra)
+AppError::not_a_directory(const std::string &extra_)
 {
-  return AppError(OPENING_DEVICE,_error,_extra);
+  return AppError(ARGUMENT_INVALID,ENOTDIR,extra_);
 }
 
 const
 AppError
-AppError::closing_device(const int          _error,
-                         const std::string &_extra)
+AppError::opening_device(const int          error_,
+                         const std::string &extra_)
 {
-  return AppError(CLOSING_DEVICE,_error,_extra);
+  return AppError(OPENING_DEVICE,error_,extra_);
 }
 
 const
 AppError
-AppError::identifying_device(const int          _error,
-                             const std::string &_extra)
+AppError::closing_device(const int          error_,
+                         const std::string &extra_)
 {
-  return AppError(IDENTIFYING_DEVICE,_error,_extra);
+  return AppError(CLOSING_DEVICE,error_,extra_);
 }
 
 const
 AppError
-AppError::reading_badblocks_file(const int          _error,
-                                 const std::string &_extra)
+AppError::identifying_device(const int          error_,
+                             const std::string &extra_)
 {
-  return AppError(READING_BADBLOCKS_FILE,_error,_extra);
+  return AppError(IDENTIFYING_DEVICE,error_,extra_);
 }
 
 const
 AppError
-AppError::writing_badblocks_file(const int          _error,
-                                 const std::string &_extra)
+AppError::reading_badblocks_file(const int          error_,
+                                 const std::string &extra_)
 {
-  return AppError(WRITING_BADBLOCKS_FILE,_error,_extra);
+  return AppError(READING_BADBLOCKS_FILE,error_,extra_);
 }
 
 const
 AppError
-AppError::opening_file(const int          _error,
-                       const std::string &_extra)
+AppError::writing_badblocks_file(const int          error_,
+                                 const std::string &extra_)
 {
-  return AppError(OPENING_FILE,_error,_extra);
+  return AppError(WRITING_BADBLOCKS_FILE,error_,extra_);
+}
+
+const
+AppError
+AppError::opening_file(const int          error_,
+                       const std::string &extra_)
+{
+  return AppError(OPENING_FILE,error_,extra_);
 }
 
 const

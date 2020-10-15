@@ -15,3 +15,39 @@
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
+
+#include <cstdlib>
+#include <ctime>
+#include <string>
+#include <vector>
+
+
+namespace rnd
+{
+  void
+  init(void)
+  {
+    std::srand(std::time(NULL));
+  }
+
+  std::string
+  str(int len_)
+  {
+    std::string s;
+
+    for(int i = 0; i < len_; i++)
+      s.push_back('a' + (std::rand() % 26));
+
+    return s;
+  }
+
+  std::string
+  filename(void)
+  {
+    int len;
+
+    len = ((std::rand() % 64) + 3);
+
+    return rnd::str(len);
+  }
+}

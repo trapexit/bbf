@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "errors.hpp"
+
 #include <stdint.h>
 
 #include <string>
@@ -31,18 +33,20 @@ public:
       BURNIN,
       CAPTCHA,
       DUMP_FILES,
+      ENHANCED_SECURITY_ERASE,
       FILE_BLOCKS,
       FIND_FILES,
       FIX,
       FIX_FILE,
+      FILETHRASH,
+      FSTHRASH,
       INFO,
       SCAN,
       SECURITY_ERASE,
-      ENHANCED_SECURITY_ERASE,
-      WRITE_PSEUDO_UNCORRECTABLE_WL,
-      WRITE_PSEUDO_UNCORRECTABLE_WOL,
       WRITE_FLAGGED_UNCORRECTABLE_WL,
       WRITE_FLAGGED_UNCORRECTABLE_WOL,
+      WRITE_PSEUDO_UNCORRECTABLE_WL,
+      WRITE_PSEUDO_UNCORRECTABLE_WOL,
       _END
     };
 
