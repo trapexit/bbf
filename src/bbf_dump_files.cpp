@@ -23,27 +23,30 @@
 #include "errors.hpp"
 #include "options.hpp"
 
-std::ostream &
-operator<<(std::ostream                                      &os,
-           const BlockToFileMapper::BlockMap::const_iterator &i)
+std::ostream&
+operator<<(std::ostream                                      &os_,
+           const BlockToFileMapper::BlockMap::const_iterator &i_)
 {
-  os << i->first << " - "
-     << (i->first + i->second.first - 1)
-     << " "
-     << i->second.second;
+  os_ << i_->first << " - "
+      << (i_->first + i_->second.first - 1)
+      << " "
+      << i_->second.second;
+  return os_;
 }
 
-std::ostream &
-operator<<(std::ostream                      &os,
-           const BlockToFileMapper::BlockMap &bm)
+std::ostream&
+operator<<(std::ostream                      &os_,
+           const BlockToFileMapper::BlockMap &bm_)
 {
   for(BlockToFileMapper::BlockMap::const_iterator
-        i = bm.begin(), ei = bm.end();
+        i = bm_.begin(), ei = bm_.end();
       i != ei;
       ++i)
     {
-      os << i << std::endl;
+      os_ << i << std::endl;
     }
+
+  return os_;
 }
 
 namespace bbf

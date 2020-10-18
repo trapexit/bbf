@@ -19,7 +19,7 @@ TOUCH = $(shell which touch)
 RM    = $(shell which rm)
 
 CFLAGS=-O2 -g
-LDLIBS=-lrt
+LDLIBS=-lrt -pthread
 LDFLAGS=
 
 SRC = $(wildcard src/*.cpp)

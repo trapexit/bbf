@@ -52,6 +52,10 @@ usage(std::ostream &os)
     "                            - read block, write block of 0x00, 0x55, 0xAA, 0xFF\n"
     "                            - write back original block if was successfully read\n"
     "                            - only if the last write,read,verify fails is it bad\n"
+    "    * fsthrash            : hammer the filesystem with calls to core filesystem\n"
+    "                            functions to stress the device\n"
+    "    * filethrash          : creates a single file that fills the filesystem\n"
+    "                            and then hammers that file with random writes\n"
     "    * find-files          : given a list of bad blocks try to find affected files\n"
     "    * dump-files          : dump list of block ranges and files assocated with them\n"
     "    * file-blocks         : dump a list of individual blocks a file uses\n"
@@ -192,6 +196,10 @@ Options::instr_from_string(const std::string str)
     return Options::SECURITY_ERASE;
   if(str == "enhanced-security-erase")
     return Options::ENHANCED_SECURITY_ERASE;
+  if(str == "fsthrash")
+    return Options::FSTHRASH;
+  if(str == "filethrash")
+    return Options::FILETHRASH;
 
   return Options::_INVALID;
 }
@@ -257,6 +265,10 @@ Options::validate(void) const
     {
     case Options::_INVALID:
       return AppError::argument_invalid("instruction is invalid");
+    case Options::FILETHRASH:
+      break;
+    case Options::FSTHRASH:
+      break;
     case Options::BURNIN:
       if(captcha.empty())
         return AppError::argument_required("captcha");

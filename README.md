@@ -10,6 +10,7 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 
 **bbf** is a tool built around the workflow in dealing with harddrive bad blocks. It has a number of features to limit risk in using the tool and provides features to more easily track down what files are affected by the bad blocks found. Also gives you the ability to manually mark blocks as corrupted in cases where the block isn't technically bad but causing issues.
 
+
 # FEATURES
 
  * readonly scanning of bad blocks
@@ -20,6 +21,8 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
  * dump list of files and associated block ranges
  * dump list of blocks used by a file
  * issue secure drive erasure
+ * filesystem stressing
+
 
 # OPTIONS
 
@@ -37,6 +40,7 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 * **-c, --captcha <captcha>** : needed when performing destructive operations
 * **-M, --maxerrors <n>** : max r/w errors before exiting (default: 1024)
 
+
 ### instructions ###
 
 * **info** : print out details of the device
@@ -45,6 +49,8 @@ bbf [options] &lt;instruction&gt; &lt;path&gt;
 * **fix** : attempt to force drive to reallocate block
 * **fix-file** : same behavior as 'fix' but only for a file's blocks
 * **burnin** : attempts a non-destructive write, read, & verify
+* **fsthrash** : hammers the filesystem with calls to core filesystem functions
+* **filethrash** : creates 1 file to fill drive and hammers it with writes
 * **find-files** : given a list of bad blocks try to find affected files
 * **dump-files** : dump list of block ranges and files assocated with them
 * **file-blocks** : dump a list of individual blocks a file uses
@@ -63,6 +69,7 @@ OS mode is the default but ATA is the suggested mode. Especially for `fix` and `
 When running a `fix` or `burnin`, rather than writing zeros like other tools, it will first read the block and try to write it back. This will be non-destructive so long as the same location is not being used at the same time. Only if the block read fails will zeros be used.
 
 A captcha is required for destructive operations. This helps with preventing the accidental running of the tool on the wrong drive.
+
 
 # EXAMPLES
 
@@ -144,6 +151,7 @@ $ sudo cp -av bbf /usr/local/bin
 * twitter: https://twitter.com/_trapexit
 * reddit: https://www.reddit.com/user/trapexit
 * discord: https://discord.gg/MpAr69V
+
 
 #### Support development
 

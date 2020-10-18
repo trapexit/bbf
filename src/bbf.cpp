@@ -20,9 +20,11 @@
 #include "bbf_captcha.hpp"
 #include "bbf_dump_files.hpp"
 #include "bbf_file_blocks.hpp"
+#include "bbf_filethrash.hpp"
 #include "bbf_find_files.hpp"
 #include "bbf_fix.hpp"
 #include "bbf_fix_file.hpp"
+#include "bbf_fsthrash.hpp"
 #include "bbf_info.hpp"
 #include "bbf_scan.hpp"
 #include "bbf_security_erase.hpp"
@@ -73,6 +75,10 @@ namespace l
         return bbf::security_erase(opts_);
       case Options::ENHANCED_SECURITY_ERASE:
         return bbf::enhanced_security_erase(opts_);
+      case Options::FSTHRASH:
+        return bbf::fsthrash(opts_);
+      case Options::FILETHRASH:
+        return bbf::filethrash(opts_);
       }
 
     return AppError::success();

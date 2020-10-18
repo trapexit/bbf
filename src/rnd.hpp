@@ -15,3 +15,21 @@
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
+
+#pragma once
+
+#include <string>
+#include <vector>
+
+namespace rnd
+{
+  std::string str(int len);
+  std::string filename(void);
+
+  template<typename T>
+  T&
+  element(std::vector<T> &v_)
+  {
+    return v_[std::rand() % v_.size()];
+  }
+}
