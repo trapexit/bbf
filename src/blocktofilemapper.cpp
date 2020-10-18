@@ -191,9 +191,13 @@ BlockToFileMapper::find(const uint64_t block) const
 {
   BlockMap::const_iterator iter;
 
+
   iter = _blockmap.upper_bound(block);
   if(iter != _blockmap.end())
     --iter;
+
+  if(iter == _blockmap.end())
+    return std::make_pair(false,std::string());
 
   if(block < (iter->first + iter->second.first))
     return std::make_pair(true,iter->second.second);
