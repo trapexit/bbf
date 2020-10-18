@@ -173,7 +173,7 @@ int
 BlockToFileMapper::scan(const std::string &basepath)
 {
   int rv;
-  uint64_t blocksize;
+  int64_t blocksize;
 
   blocksize = File::logical_block_size(basepath);
   if(blocksize < 0)
