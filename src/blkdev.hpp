@@ -21,9 +21,11 @@
 #include "sg.hpp"
 
 #include <string>
+#include <vector>
 
 #include <stdlib.h>
 #include <stdint.h>
+
 
 class BlkDev
 {
@@ -80,10 +82,18 @@ public:
                void           *buf,
                const uint64_t  buflen);
 
+  int64_t read(const uint64_t     lba,
+               const uint64_t     blocks,
+               std::vector<char> &buf);
+
   int64_t write(const uint64_t  lba,
                 const uint64_t  blocks,
                 const void     *buf,
                 const uint64_t  buflen);
+
+  int64_t write(const uint64_t           lba,
+                const uint64_t           blocks,
+                const std::vector<char> &buf);
 
 public:
   int sync(void);

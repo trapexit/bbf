@@ -257,6 +257,22 @@ BlkDev::read(const uint64_t  lba_,
 }
 
 int64_t
+BlkDev::read(const uint64_t     lba_,
+             const uint64_t     blocks_,
+             std::vector<char> &buf_)
+{
+  switch(_rw_type)
+    {
+    case ATA:
+      return ata_read(lba_,blocks_,&buf_[0],buf_.size());
+    case OS:
+      return os_read(lba_,blocks_,&buf_[0],buf_.size());
+    }
+
+  return -ENOTSUP;
+}
+
+int64_t
 BlkDev::write(const uint64_t  lba_,
               const uint64_t  blocks_,
               const void     *buf_,
@@ -268,6 +284,22 @@ BlkDev::write(const uint64_t  lba_,
       return ata_write(lba_,blocks_,buf_,buflen_);
     case OS:
       return os_write(lba_,blocks_,buf_,buflen_);
+    }
+
+  return -ENOTSUP;
+}
+
+int64_t
+BlkDev::write(const uint64_t           lba_,
+              const uint64_t           blocks_,
+              const std::vector<char> &buf_)
+{
+  switch(_rw_type)
+    {
+    case ATA:
+      return ata_write(lba_,blocks_,&buf_[0],buf_.size());
+    case OS:
+      return os_write(lba_,blocks_,&buf_[0],buf_.size());
     }
 
   return -ENOTSUP;
