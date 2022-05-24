@@ -30,7 +30,8 @@ namespace captcha
 
     if(blkdev.has_identity())
       ss << blkdev.identity().serial_number;
-    else
+
+    if(ss.gcount() == 0)
       ss << blkdev.size_in_bytes();
 
     return ss.str();

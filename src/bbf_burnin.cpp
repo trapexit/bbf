@@ -32,6 +32,9 @@
 #include <errno.h>
 #include <stdint.h>
 
+typedef std::vector<char> CharVec;
+typedef std::vector<CharVec> CharVecVec;
+
 namespace l
 {
   static
@@ -57,28 +60,27 @@ namespace l
   write_read_compare(BlkDev         &blkdev_,
                      const uint64_t  stepping_,
                      const uint64_t  block_,
-                     char           *buf_,
-                     const size_t    buflen_,
+                     CharVec        &tmpbuf_,
                      const int       retries_,
-                     const char     *write_buf_)
+                     const CharVec  &write_buf_)
   {
     int rv;
 
     rv = -1;
     for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
-      rv = blkdev_.write(block_,stepping_,write_buf_,buflen_);
+      rv = blkdev_.write(block_,stepping_,write_buf_);
 
     if(rv < 0)
       return rv;
 
     rv = -1;
     for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
-      rv = blkdev_.read(block_,stepping_,buf_,buflen_);
+      rv = blkdev_.read(block_,stepping_,tmpbuf_);
 
     if(rv < 0)
       return rv;
 
-    rv = ::memcmp(write_buf_,buf_,buflen_);
+    rv = ::memcmp(&write_buf_[0],&tmpbuf_[0],tmpbuf_.size());
     if(rv != 0)
       return -EIO;
 
@@ -87,29 +89,29 @@ namespace l
 
   static
   int
-  burn_block(BlkDev         &blkdev_,
-             const uint64_t  stepping_,
-             const uint64_t  block_,
-             char           *buf_,
-             const size_t    buflen_,
-             const uint64_t  retries_,
-             const std::vector<std::vector<char> > &patterns_)
+  burn_block(BlkDev            &blkdev_,
+             const uint64_t     stepping_,
+             const uint64_t     block_,
+             CharVec           &tmpbuf_,
+             CharVec           &savebuf_,
+             const uint64_t     retries_,
+             const CharVecVec  &patterns_)
   {
     int rv;
 
     rv = -1;
     for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
-      rv = blkdev_.read(block_,stepping_,buf_,buflen_);
+      rv = blkdev_.read(block_,stepping_,savebuf_);
 
     if(rv < 0)
-      ::memset(buf_,0,buflen_);
+      ::memset(&savebuf_[0],0,savebuf_.size());
 
     for(uint64_t i = 0; i < patterns_.size(); i++)
-      rv = l::write_read_compare(blkdev_,stepping_,block_,buf_,buflen_,retries_,&patterns_[i][0]);
+      rv = l::write_read_compare(blkdev_,stepping_,block_,tmpbuf_,retries_,patterns_[i]);
 
     rv = -1;
     for(uint64_t i = 0; ((i <= retries_) && (rv < 0)); i++)
-      rv = blkdev_.write(block_,stepping_,buf_,buflen_);
+      rv = blkdev_.write(block_,stepping_,savebuf_);
 
     return rv;
   }
@@ -120,8 +122,7 @@ namespace l
               const uint64_t         start_block_,
               const uint64_t         end_block_,
               const uint64_t         stepping_,
-              char                  *buf_,
-              const size_t           buflen_,
+              const uint64_t         buflen_,
               std::vector<uint64_t> &badblocks_,
               const uint64_t         max_errors_,
               const int              retries_)
@@ -130,8 +131,13 @@ namespace l
     uint64_t block;
     uint64_t stepping;
     InfoPrinter info;
-    std::vector<std::vector<char> > patterns;
+    CharVec tmpbuf;
+    CharVec savebuf;
+    CharVecVec patterns;
     const double start_time = Time::get_monotonic();
+
+    tmpbuf.resize(buflen_,0x00);
+    savebuf.resize(buflen_,0x00);
 
     patterns.resize(4);
     patterns[0].resize(buflen_,0x00);
@@ -156,7 +162,7 @@ namespace l
 
         stepping = l::trim_stepping(blkdev_,block,stepping_);
 
-        rv = l::burn_block(blkdev_,stepping,block,buf_,buflen_,retries_,patterns);
+        rv = l::burn_block(blkdev_,stepping,block,tmpbuf,savebuf,retries_,patterns);
 
         block += stepping;
         if(rv >= 0)
@@ -186,7 +192,6 @@ namespace l
   {
     int       rv;
     int       retries;
-    char     *buf;
     size_t    buflen;
     uint64_t  start_block;
     uint64_t  end_block;
@@ -225,17 +230,14 @@ namespace l
               << end_block
               << std::endl;
 
-    buf = new char[buflen];
     rv = l::burnin_loop(blkdev_,
-                     start_block,
-                     end_block,
-                     stepping,
-                     buf,
-                     buflen,
-                     badblocks_,
-                     opts_.max_errors,
-                     retries);
-    delete[] buf;
+                        start_block,
+                        end_block,
+                        stepping,
+                        buflen,
+                        badblocks_,
+                        opts_.max_errors,
+                        retries);
 
     std::cout << std::endl;
 
